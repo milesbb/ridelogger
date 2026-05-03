@@ -5,9 +5,12 @@ import { resolve } from "path"
 export default defineConfig({
   plugins: [react()],
   test: {
-    environment: "jsdom",
+    environment: "node",
     globals: true,
-    setupFiles: ["./src/test/setup.ts"],
+    environmentMatchGlobs: [
+      ["**/*.test.tsx", "jsdom"],
+      ["**/components/**/*.test.ts", "jsdom"],
+    ],
   },
   resolve: {
     alias: {

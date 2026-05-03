@@ -28,17 +28,16 @@ export async function createLocation(data: { name: string; address: string }) {
     return { error: "Could not geocode that address. Please check it and try again." }
   }
 
-  const { error } = await supabase.from("locations").insert({
-    user_id: user.id,
-    name: data.name,
-    address: data.address,
-    lat,
-    lon,
-  })
+  const { data: created, error } = await supabase
+    .from("locations")
+    .insert({ user_id: user.id, name: data.name, address: data.address, lat, lon })
+    .select()
+    .single()
 
-  if (error) return { error: error.message }
+  if (error) return { error: error.message, location: null }
   revalidatePath("/locations")
-  return { error: null }
+  revalidatePath("/drive")
+  return { error: null, location: created }
 }
 
 export async function updateLocation(id: string, data: { name: string; address: string }) {
