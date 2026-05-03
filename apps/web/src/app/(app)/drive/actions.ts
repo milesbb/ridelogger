@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { createRoutingService, type Coords } from "@ridelogger/routing"
 import { calculateRoundTrip } from "@/lib/drive-utils"
+import type { Passenger, Location } from "@/lib/supabase/types"
 
 export interface DriveSegmentInput {
   passengerId: string
@@ -30,21 +31,23 @@ export async function calculateDriveDay(
   const passengerIds = segments.map((s) => s.passengerId)
   const locationIds = segments.map((s) => s.destinationLocationId)
 
-  const [{ data: passengers }, { data: locations }] = await Promise.all([
-    supabase
-      .from("passengers")
-      .select("id, name, home_address, home_lat, home_lon")
-      .eq("user_id", user.id)
-      .in("id", passengerIds),
-    supabase
-      .from("locations")
-      .select("id, name, address, lat, lon")
-      .eq("user_id", user.id)
-      .in("id", locationIds),
-  ])
+  const { data: passengersData } = await supabase
+    .from("passengers")
+    .select("*")
+    .eq("user_id", user.id)
+    .in("id", passengerIds)
 
-  const passengerMap = new Map(passengers?.map((p) => [p.id, p]) ?? [])
-  const locationMap = new Map(locations?.map((l) => [l.id, l]) ?? [])
+  const { data: locationsData } = await supabase
+    .from("locations")
+    .select("*")
+    .eq("user_id", user.id)
+    .in("id", locationIds)
+
+  const passengers = (passengersData ?? []) as Passenger[]
+  const locations = (locationsData ?? []) as Location[]
+
+  const passengerMap = new Map(passengers.map((p) => [p.id, p]))
+  const locationMap = new Map(locations.map((l) => [l.id, l]))
 
   const routing = await createRoutingService(
     (process.env.ROUTING_PROVIDER as "ors" | "google") ?? "ors",

@@ -36,6 +36,7 @@ export interface Database {
           notes?: string | null
           updated_at?: string
         }
+        Relationships: []
       }
       locations: {
         Row: {
@@ -67,6 +68,7 @@ export interface Database {
           lon?: number | null
           updated_at?: string
         }
+        Relationships: []
       }
       app_settings: {
         Row: {
@@ -95,6 +97,7 @@ export interface Database {
           home_lon?: number | null
           updated_at?: string
         }
+        Relationships: []
       }
     }
     Views: Record<string, never>

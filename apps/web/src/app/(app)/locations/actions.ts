@@ -3,6 +3,9 @@
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
 import { createRoutingService } from "@ridelogger/routing"
+import type { Location } from "@/lib/supabase/types"
+
+type CreateLocationResult = { error: string; location: null } | { error: null; location: Location }
 
 async function geocodeAddress(address: string) {
   const routing = await createRoutingService(
@@ -11,12 +14,12 @@ async function geocodeAddress(address: string) {
   return routing.geocode(address)
 }
 
-export async function createLocation(data: { name: string; address: string }) {
+export async function createLocation(data: { name: string; address: string }): Promise<CreateLocationResult> {
   const supabase = createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) return { error: "Not authenticated" }
+  if (!user) return { error: "Not authenticated", location: null }
 
   let lat: number | null = null
   let lon: number | null = null
@@ -25,7 +28,7 @@ export async function createLocation(data: { name: string; address: string }) {
     lat = coords.lat
     lon = coords.lon
   } catch {
-    return { error: "Could not geocode that address. Please check it and try again." }
+    return { error: "Could not geocode that address. Please check it and try again.", location: null }
   }
 
   const { data: created, error } = await supabase
@@ -37,7 +40,7 @@ export async function createLocation(data: { name: string; address: string }) {
   if (error) return { error: error.message, location: null }
   revalidatePath("/locations")
   revalidatePath("/drive")
-  return { error: null, location: created }
+  return { error: null, location: created as Location }
 }
 
 export async function updateLocation(id: string, data: { name: string; address: string }) {
