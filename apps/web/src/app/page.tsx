@@ -1,25 +1,18 @@
-import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
+"use client"
 
-export default async function RootPage() {
-  const supabase = createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/context/AuthContext"
 
-  if (!user) {
-    redirect("/login")
-  }
+export default function RootPage() {
+  const { accessToken, isLoading } = useAuth()
+  const router = useRouter()
 
-  const { data: settings } = await supabase
-    .from("app_settings")
-    .select("id")
-    .eq("user_id", user.id)
-    .maybeSingle()
+  useEffect(() => {
+    if (!isLoading) {
+      router.replace(accessToken ? "/drive" : "/login")
+    }
+  }, [accessToken, isLoading, router])
 
-  if (!settings) {
-    redirect("/settings")
-  }
-
-  redirect("/drive")
+  return null
 }

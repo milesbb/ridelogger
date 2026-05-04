@@ -1,14 +1,29 @@
+"use client"
+
+import { useEffect } from "react"
 import Link from "next/link"
-import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/context/AuthContext"
 
-export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const supabase = createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const { accessToken, isLoading, logout } = useAuth()
+  const router = useRouter()
 
-  if (!user) redirect("/login")
+  useEffect(() => {
+    if (!isLoading && !accessToken) {
+      router.replace("/login")
+    }
+  }, [accessToken, isLoading, router])
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">
+        Loading…
+      </div>
+    )
+  }
+
+  if (!accessToken) return null
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -27,6 +42,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <Link href="/settings" className="text-muted-foreground hover:text-foreground transition-colors">
               Settings
             </Link>
+            <button
+              onClick={logout}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Sign out
+            </button>
           </div>
         </nav>
       </header>

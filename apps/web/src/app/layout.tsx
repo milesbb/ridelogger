@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next"
 import localFont from "next/font/local"
 import "./globals.css"
+import { AuthProvider } from "@/context/AuthContext"
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -22,7 +23,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} font-sans antialiased`}>{children}</body>
+      <body className={`${geistSans.variable} font-sans antialiased`}>
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   )
 }

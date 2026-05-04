@@ -14,7 +14,7 @@ export function createOrsService(apiKey?: string): RoutingService {
       if (!res.ok) {
         throw new RoutingError(`ORS geocode failed: ${res.statusText}`, res.status)
       }
-      const data = await res.json()
+      const data = await res.json() as { features?: { geometry: { coordinates: [number, number] } }[] }
       const feature = data?.features?.[0]
       if (!feature) throw new RoutingError(`No geocode result for: ${address}`)
       const [lon, lat] = feature.geometry.coordinates as [number, number]
@@ -39,7 +39,7 @@ export function createOrsService(apiKey?: string): RoutingService {
       if (!res.ok) {
         throw new RoutingError(`ORS directions failed: ${res.statusText}`, res.status)
       }
-      const data = await res.json()
+      const data = await res.json() as { routes?: { summary: { distance: number; duration: number } }[] }
       const summary = data?.routes?.[0]?.summary
       if (!summary) throw new RoutingError("No route found")
       return {

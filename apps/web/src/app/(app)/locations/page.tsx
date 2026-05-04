@@ -1,17 +1,24 @@
-import { createClient } from "@/lib/supabase/server"
+"use client"
+
+import { useEffect, useState } from "react"
+import { api } from "@/lib/api/client"
+import type { Location } from "@/lib/api/types"
 import { LocationsList } from "./locations-list"
 
-export default async function LocationsPage() {
-  const supabase = createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+export default function LocationsPage() {
+  const [locations, setLocations] = useState<Location[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const { data: locations } = await supabase
-    .from("locations")
-    .select("*")
-    .eq("user_id", user!.id)
-    .order("name")
+  async function load() {
+    try {
+      setLocations(await api.locations.list())
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  return <LocationsList locations={locations ?? []} />
+  useEffect(() => { load() }, [])
+
+  if (loading) return <p className="text-sm text-muted-foreground py-8 text-center">Loading…</p>
+  return <LocationsList locations={locations} onRefresh={load} />
 }

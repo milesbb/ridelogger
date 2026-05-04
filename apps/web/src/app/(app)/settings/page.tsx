@@ -1,17 +1,19 @@
-import { createClient } from "@/lib/supabase/server"
+"use client"
+
+import { useEffect, useState } from "react"
+import { api } from "@/lib/api/client"
+import type { AppSettings } from "@/lib/api/types"
 import { SettingsForm } from "./settings-form"
 
-export default async function SettingsPage() {
-  const supabase = createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+export default function SettingsPage() {
+  const [settings, setSettings] = useState<AppSettings | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  const { data: settings } = await supabase
-    .from("app_settings")
-    .select("*")
-    .eq("user_id", user!.id)
-    .maybeSingle()
+  useEffect(() => {
+    api.settings.get().then((s) => { setSettings(s); setLoading(false) })
+  }, [])
+
+  if (loading) return <p className="text-sm text-muted-foreground py-8 text-center">Loading…</p>
 
   return (
     <div className="space-y-6">

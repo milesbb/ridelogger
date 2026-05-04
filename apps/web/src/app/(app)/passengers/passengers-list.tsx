@@ -3,22 +3,17 @@
 import { useState } from "react"
 import { Pencil, Trash2, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { PassengerForm } from "./passenger-form"
-import { deletePassenger } from "./actions"
-import type { Passenger } from "@/lib/supabase/types"
+import { api } from "@/lib/api/client"
+import type { Passenger } from "@/lib/api/types"
 
 interface Props {
   passengers: Passenger[]
+  onRefresh: () => void
 }
 
-export function PassengersList({ passengers }: Props) {
+export function PassengersList({ passengers, onRefresh }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [addOpen, setAddOpen] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -26,8 +21,12 @@ export function PassengersList({ passengers }: Props) {
   async function handleDelete(id: string) {
     if (!confirm("Remove this passenger?")) return
     setDeletingId(id)
-    await deletePassenger(id)
-    setDeletingId(null)
+    try {
+      await api.passengers.delete(id)
+      onRefresh()
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   return (
@@ -36,16 +35,11 @@ export function PassengersList({ passengers }: Props) {
         <h1 className="text-xl font-semibold">Passengers</h1>
         <Dialog open={addOpen} onOpenChange={setAddOpen}>
           <DialogTrigger asChild>
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-1" />
-              Add
-            </Button>
+            <Button size="sm"><Plus className="h-4 w-4 mr-1" />Add</Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add passenger</DialogTitle>
-            </DialogHeader>
-            <PassengerForm onDone={() => setAddOpen(false)} />
+            <DialogHeader><DialogTitle>Add passenger</DialogTitle></DialogHeader>
+            <PassengerForm onDone={() => { setAddOpen(false); onRefresh() }} />
           </DialogContent>
         </Dialog>
       </div>
@@ -63,32 +57,17 @@ export function PassengersList({ passengers }: Props) {
                 <p className="text-sm text-muted-foreground truncate">{p.home_address}</p>
                 {p.notes && <p className="text-xs text-muted-foreground mt-0.5">{p.notes}</p>}
               </div>
-
               <div className="flex gap-1 shrink-0">
-                <Dialog
-                  open={editingId === p.id}
-                  onOpenChange={(open) => setEditingId(open ? p.id : null)}
-                >
+                <Dialog open={editingId === p.id} onOpenChange={(open) => setEditingId(open ? p.id : null)}>
                   <DialogTrigger asChild>
-                    <Button variant="ghost" size="icon" aria-label="Edit">
-                      <Pencil className="h-4 w-4" />
-                    </Button>
+                    <Button variant="ghost" size="icon" aria-label="Edit"><Pencil className="h-4 w-4" /></Button>
                   </DialogTrigger>
                   <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Edit passenger</DialogTitle>
-                    </DialogHeader>
-                    <PassengerForm existing={p} onDone={() => setEditingId(null)} />
+                    <DialogHeader><DialogTitle>Edit passenger</DialogTitle></DialogHeader>
+                    <PassengerForm existing={p} onDone={() => { setEditingId(null); onRefresh() }} />
                   </DialogContent>
                 </Dialog>
-
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Delete"
-                  disabled={deletingId === p.id}
-                  onClick={() => handleDelete(p.id)}
-                >
+                <Button variant="ghost" size="icon" aria-label="Delete" disabled={deletingId === p.id} onClick={() => handleDelete(p.id)}>
                   <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
               </div>

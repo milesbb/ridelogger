@@ -4,12 +4,13 @@ import { useState } from "react"
 import { ChevronDown, ChevronUp, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DestinationPicker } from "./destination-picker"
-import { calculateDriveDay, type DriveSegmentResult } from "./actions"
-import type { Passenger, Location } from "@/lib/supabase/types"
+import { api } from "@/lib/api/client"
+import type { Passenger, Location, DriveSegmentResult } from "@/lib/api/types"
 
 interface Props {
   passengers: Passenger[]
   locations: Location[]
+  onLocationsChange: (locations: Location[]) => void
 }
 
 interface PassengerSlot {
@@ -19,7 +20,7 @@ interface PassengerSlot {
   pickerOpen: boolean
 }
 
-export function DrivePlanner({ passengers, locations }: Props) {
+export function DrivePlanner({ passengers, locations, onLocationsChange }: Props) {
   const [slots, setSlots] = useState<PassengerSlot[]>([])
   const [results, setResults] = useState<DriveSegmentResult[] | null>(null)
   const [calculating, setCalculating] = useState(false)
@@ -35,15 +36,11 @@ export function DrivePlanner({ passengers, locations }: Props) {
   }
 
   function openPicker(passengerId: string) {
-    setSlots((prev) =>
-      prev.map((s) => ({ ...s, pickerOpen: s.passenger.id === passengerId })),
-    )
+    setSlots((prev) => prev.map((s) => ({ ...s, pickerOpen: s.passenger.id === passengerId })))
   }
 
   function closePicker(passengerId: string) {
-    setSlots((prev) =>
-      prev.map((s) => (s.passenger.id === passengerId ? { ...s, pickerOpen: false } : s)),
-    )
+    setSlots((prev) => prev.map((s) => (s.passenger.id === passengerId ? { ...s, pickerOpen: false } : s)))
   }
 
   function setDestination(passengerId: string, locationId: string, locationName: string) {
@@ -72,17 +69,15 @@ export function DrivePlanner({ passengers, locations }: Props) {
   async function handleCalculate() {
     setCalculating(true)
     setCalcError("")
-    const { results: res, error } = await calculateDriveDay(
-      slots.map((s) => ({
-        passengerId: s.passenger.id,
-        destinationLocationId: s.destinationId!,
-      })),
-    )
-    setCalculating(false)
-    if (error) {
-      setCalcError(error)
-    } else {
+    try {
+      const res = await api.drive.calculate(
+        slots.map((s) => ({ passengerId: s.passenger.id, destinationLocationId: s.destinationId! })),
+      )
       setResults(res)
+    } catch (err) {
+      setCalcError(err instanceof Error ? err.message : "Calculation failed")
+    } finally {
+      setCalculating(false)
     }
   }
 
@@ -90,18 +85,13 @@ export function DrivePlanner({ passengers, locations }: Props) {
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-semibold">Drive Day</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Select passengers, set destinations, then calculate.
-        </p>
+        <p className="text-sm text-muted-foreground mt-1">Select passengers, set destinations, then calculate.</p>
       </div>
 
-      {/* Step 1: Passenger selection */}
       <div className="space-y-2">
         <p className="text-sm font-medium">1. Select passengers</p>
         {passengers.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No passengers saved yet. <a href="/passengers" className="underline">Add one first.</a>
-          </p>
+          <p className="text-sm text-muted-foreground">No passengers saved yet. <a href="/passengers" className="underline">Add one first.</a></p>
         ) : (
           <div className="space-y-2">
             {passengers.map((p) => {
@@ -111,11 +101,7 @@ export function DrivePlanner({ passengers, locations }: Props) {
                   key={p.id}
                   type="button"
                   onClick={() => togglePassenger(p)}
-                  className={`w-full text-left border rounded-lg px-4 py-3 transition-colors ${
-                    selected
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:bg-accent"
-                  }`}
+                  className={`w-full text-left border rounded-lg px-4 py-3 transition-colors ${selected ? "border-primary bg-primary/5" : "border-border hover:bg-accent"}`}
                 >
                   <span className="font-medium text-sm">{p.name}</span>
                   <span className="text-xs text-muted-foreground ml-2">{selected ? "✓ selected" : ""}</span>
@@ -126,7 +112,6 @@ export function DrivePlanner({ passengers, locations }: Props) {
         )}
       </div>
 
-      {/* Step 2: Destinations + order */}
       {slots.length > 0 && (
         <div className="space-y-2">
           <p className="text-sm font-medium">2. Set destination for each passenger</p>
@@ -135,48 +120,28 @@ export function DrivePlanner({ passengers, locations }: Props) {
             {slots.map((slot, i) => (
               <div key={slot.passenger.id} className="border rounded-lg overflow-hidden">
                 <div className="flex items-center gap-2 px-4 py-3">
-                  {/* Reorder buttons */}
                   <div className="flex flex-col gap-0.5 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => moveSlot(i, -1)}
-                      disabled={i === 0}
-                      className="text-muted-foreground disabled:opacity-20 hover:text-foreground"
-                    >
+                    <button type="button" onClick={() => moveSlot(i, -1)} disabled={i === 0} className="text-muted-foreground disabled:opacity-20 hover:text-foreground">
                       <ChevronUp className="h-4 w-4" />
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => moveSlot(i, 1)}
-                      disabled={i === slots.length - 1}
-                      className="text-muted-foreground disabled:opacity-20 hover:text-foreground"
-                    >
+                    <button type="button" onClick={() => moveSlot(i, 1)} disabled={i === slots.length - 1} className="text-muted-foreground disabled:opacity-20 hover:text-foreground">
                       <ChevronDown className="h-4 w-4" />
                     </button>
                   </div>
-
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm">{slot.passenger.name}</p>
                     {slot.destinationName ? (
                       <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                        <MapPin className="h-3 w-3 shrink-0" />
-                        {slot.destinationName}
+                        <MapPin className="h-3 w-3 shrink-0" />{slot.destinationName}
                       </p>
                     ) : (
                       <p className="text-xs text-muted-foreground mt-0.5">No destination set</p>
                     )}
                   </div>
-
-                  <Button
-                    type="button"
-                    variant={slot.destinationId ? "outline" : "default"}
-                    size="sm"
-                    onClick={() => openPicker(slot.passenger.id)}
-                  >
+                  <Button type="button" variant={slot.destinationId ? "outline" : "default"} size="sm" onClick={() => openPicker(slot.passenger.id)}>
                     {slot.destinationId ? "Change" : "Set destination"}
                   </Button>
                 </div>
-
                 <DestinationPicker
                   open={slot.pickerOpen}
                   onClose={() => closePicker(slot.passenger.id)}
@@ -185,6 +150,7 @@ export function DrivePlanner({ passengers, locations }: Props) {
                   passengerHomeId={`home-${slot.passenger.id}`}
                   selected={slot.destinationId}
                   onSelect={(id, name) => setDestination(slot.passenger.id, id, name)}
+                  onLocationAdded={(loc) => onLocationsChange([...locations, loc])}
                 />
               </div>
             ))}
@@ -192,26 +158,18 @@ export function DrivePlanner({ passengers, locations }: Props) {
         </div>
       )}
 
-      {/* Calculate button */}
       {slots.length > 0 && (
         <div className="space-y-2">
           {calcError && <p className="text-sm text-destructive">{calcError}</p>}
-          <Button
-            onClick={handleCalculate}
-            disabled={!readyToCalculate || calculating}
-            className="w-full"
-          >
+          <Button onClick={handleCalculate} disabled={!readyToCalculate || calculating} className="w-full">
             {calculating ? "Calculating…" : "Calculate distances"}
           </Button>
           {!readyToCalculate && slots.some((s) => !s.destinationId) && (
-            <p className="text-xs text-muted-foreground text-center">
-              Set a destination for each passenger first.
-            </p>
+            <p className="text-xs text-muted-foreground text-center">Set a destination for each passenger first.</p>
           )}
         </div>
       )}
 
-      {/* Results table */}
       {results && results.length > 0 && (
         <div className="space-y-3">
           <p className="text-sm font-medium">Results</p>
@@ -256,9 +214,7 @@ export function DrivePlanner({ passengers, locations }: Props) {
               )}
             </table>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Distances and times include both outbound and return legs (passenger in car only).
-          </p>
+          <p className="text-xs text-muted-foreground">Distances and times include both outbound and return legs.</p>
         </div>
       )}
     </div>

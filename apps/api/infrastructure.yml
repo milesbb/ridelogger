@@ -1,0 +1,104 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: RideLogger API — Lambda + API Gateway
+
+Parameters:
+  DeploymentBucket:
+    Type: String
+    Description: S3 bucket used for Lambda deployment packages
+  FrontendUrl:
+    Type: String
+    Default: https://ridelogger-web-milesbbs-projects.vercel.app
+
+Resources:
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: RideLoggerAPIRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  ApiFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: ridelogger-api
+      Runtime: nodejs20.x
+      Handler: lambda.handler
+      Role: !GetAtt LambdaRole.Arn
+      Code:
+        S3Bucket: !Ref DeploymentBucket
+        S3Key: api.zip
+      Timeout: 30
+      MemorySize: 256
+      Environment:
+        Variables:
+          NODE_ENV: production
+          FRONTEND_URL: !Ref FrontendUrl
+          # Set these in AWS SSM and reference them here, or set directly:
+          # DATABASE_URL: "{{resolve:ssm:/ridelogger/prod/database-url}}"
+          # JWT_SECRET: "{{resolve:ssm-secure:/ridelogger/prod/jwt-secret}}"
+          # ORS_API_KEY: "{{resolve:ssm:/ridelogger/prod/ors-api-key}}"
+          # REGISTER_SECRET: "{{resolve:ssm-secure:/ridelogger/prod/register-secret}}"
+
+  ApiGateway:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: ridelogger-api
+      ProtocolType: HTTP
+      CorsConfiguration:
+        AllowOrigins:
+          - !Ref FrontendUrl
+        AllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+        AllowHeaders:
+          - Content-Type
+          - Authorization
+        AllowCredentials: true
+        MaxAge: 300
+
+  ApiIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref ApiGateway
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub
+        - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations
+        - LambdaArn: !GetAtt ApiFunction.Arn
+      PayloadFormatVersion: "2.0"
+
+  ApiRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ApiGateway
+      RouteKey: "$default"
+      Target: !Sub integrations/${ApiIntegration}
+
+  ApiStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref ApiGateway
+      StageName: "$default"
+      AutoDeploy: true
+
+  LambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ApiFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGateway}/*/*
+
+Outputs:
+  ApiUrl:
+    Description: API base URL — set this as NEXT_PUBLIC_API_URL in Vercel
+    Value: !Sub https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com

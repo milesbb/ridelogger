@@ -4,14 +4,9 @@ import { useState } from "react"
 import { Check, Plus, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { createLocation } from "../locations/actions"
-import type { Location } from "@/lib/supabase/types"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { api } from "@/lib/api/client"
+import type { Location } from "@/lib/api/types"
 
 interface Props {
   open: boolean
@@ -21,16 +16,12 @@ interface Props {
   passengerHomeId: string
   selected: string | null
   onSelect: (locationId: string, locationName: string) => void
+  onLocationAdded: (location: Location) => void
 }
 
 export function DestinationPicker({
-  open,
-  onClose,
-  locations,
-  passengerHomeAddress,
-  passengerHomeId,
-  selected,
-  onSelect,
+  open, onClose, locations, passengerHomeAddress, passengerHomeId,
+  selected, onSelect, onLocationAdded,
 }: Props) {
   const [showAddForm, setShowAddForm] = useState(false)
   const [newName, setNewName] = useState("")
@@ -42,33 +33,30 @@ export function DestinationPicker({
     e.preventDefault()
     setSaving(true)
     setSaveError("")
-    const result = await createLocation({ name: newName, address: newAddress })
-    setSaving(false)
-    if (result.error) {
-      setSaveError(result.error)
-    } else if (result.location) {
-      onSelect(result.location.id, result.location.name)
+    try {
+      const location = await api.locations.create({ name: newName, address: newAddress })
+      onLocationAdded(location)
+      onSelect(location.id, location.name)
       setNewName("")
       setNewAddress("")
       setShowAddForm(false)
       onClose()
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Failed to save")
+    } finally {
+      setSaving(false)
     }
   }
-
-  const homeEntry = { id: passengerHomeId, name: "Home", address: passengerHomeAddress }
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md max-h-[80vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Where to?</DialogTitle>
-        </DialogHeader>
+        <DialogHeader><DialogTitle>Where to?</DialogTitle></DialogHeader>
 
         <div className="flex-1 overflow-y-auto -mx-6 px-6 space-y-1">
-          {/* Passenger's home as an option */}
           <button
             type="button"
-            onClick={() => { onSelect(homeEntry.id, homeEntry.name); onClose() }}
+            onClick={() => { onSelect(passengerHomeId, "Home"); onClose() }}
             className="w-full flex items-center gap-3 rounded-md px-3 py-2.5 text-left hover:bg-accent transition-colors"
           >
             <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -76,7 +64,7 @@ export function DestinationPicker({
               <span className="font-medium text-sm">Home</span>
               <p className="text-xs text-muted-foreground truncate">{passengerHomeAddress}</p>
             </div>
-            {selected === homeEntry.id && <Check className="h-4 w-4 shrink-0" />}
+            {selected === passengerHomeId && <Check className="h-4 w-4 shrink-0" />}
           </button>
 
           {locations.length > 0 && (
@@ -105,38 +93,17 @@ export function DestinationPicker({
         <div className="border-t pt-4 mt-2">
           {showAddForm ? (
             <form onSubmit={handleAddNew} className="space-y-3">
-              <Input
-                placeholder="Location name (e.g. St Vincent's)"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                required
-              />
-              <Input
-                placeholder="Full address"
-                value={newAddress}
-                onChange={(e) => setNewAddress(e.target.value)}
-                required
-              />
+              <Input placeholder="Location name (e.g. St Vincent's)" value={newName} onChange={(e) => setNewName(e.target.value)} required />
+              <Input placeholder="Full address" value={newAddress} onChange={(e) => setNewAddress(e.target.value)} required />
               {saveError && <p className="text-xs text-destructive">{saveError}</p>}
               <div className="flex gap-2">
-                <Button type="submit" size="sm" disabled={saving}>
-                  {saving ? "Saving…" : "Save & select"}
-                </Button>
-                <Button type="button" size="sm" variant="outline" onClick={() => setShowAddForm(false)}>
-                  Cancel
-                </Button>
+                <Button type="submit" size="sm" disabled={saving}>{saving ? "Saving…" : "Save & select"}</Button>
+                <Button type="button" size="sm" variant="outline" onClick={() => setShowAddForm(false)}>Cancel</Button>
               </div>
             </form>
           ) : (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={() => setShowAddForm(true)}
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              Add new address
+            <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => setShowAddForm(true)}>
+              <Plus className="h-4 w-4 mr-1" />Add new address
             </Button>
           )}
         </div>

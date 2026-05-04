@@ -4,8 +4,8 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { saveSettings } from "./actions"
-import type { AppSettings } from "@/lib/supabase/types"
+import { api } from "@/lib/api/client"
+import type { AppSettings } from "@/lib/api/types"
 
 interface Props {
   existing: AppSettings | null
@@ -21,21 +21,20 @@ export function SettingsForm({ existing }: Props) {
     e.preventDefault()
     setLoading(true)
     setError("")
-    const result = await saveSettings({ homeAddress: address })
-    setLoading(false)
-    if (result.error) {
-      setError(result.error)
-    } else {
+    try {
+      await api.settings.save(address)
       router.push("/drive")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save")
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
       <div className="space-y-2">
-        <label htmlFor="home-address" className="text-sm font-medium">
-          Your home address
-        </label>
+        <label htmlFor="home-address" className="text-sm font-medium">Your home address</label>
         <Input
           id="home-address"
           value={address}
@@ -43,16 +42,10 @@ export function SettingsForm({ existing }: Props) {
           placeholder="123 Example St, Suburb VIC 3000"
           required
         />
-        <p className="text-xs text-muted-foreground">
-          Enter a full street address including suburb and state.
-        </p>
+        <p className="text-xs text-muted-foreground">Enter a full street address including suburb and state.</p>
       </div>
-
       {error && <p className="text-sm text-destructive">{error}</p>}
-
-      <Button type="submit" disabled={loading}>
-        {loading ? "Saving…" : "Save"}
-      </Button>
+      <Button type="submit" disabled={loading}>{loading ? "Saving…" : "Save"}</Button>
     </form>
   )
 }

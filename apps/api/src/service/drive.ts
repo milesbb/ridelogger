@@ -1,9 +1,7 @@
-"use server"
-
-import { createClient } from "@/lib/supabase/server"
 import { createRoutingService, type Coords } from "@ridelogger/routing"
-import { calculateRoundTrip } from "@/lib/drive-utils"
-import type { Passenger, Location } from "@/lib/supabase/types"
+import { calculateRoundTrip } from "./driveUtils"
+import { getPassenger } from "../data/passengers"
+import { getLocation } from "../data/locations"
 
 export interface DriveSegmentInput {
   passengerId: string
@@ -20,69 +18,41 @@ export interface DriveSegmentResult {
 }
 
 export async function calculateDriveDay(
+  userId: string,
   segments: DriveSegmentInput[],
-): Promise<{ results: DriveSegmentResult[]; error: string | null }> {
-  const supabase = createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { results: [], error: "Not authenticated" }
+): Promise<DriveSegmentResult[]> {
+  const provider = (process.env.ROUTING_PROVIDER as "ors" | "google") ?? "ors"
+  const routing = await createRoutingService(provider)
 
-  const passengerIds = segments.map((s) => s.passengerId)
-  const locationIds = segments.map((s) => s.destinationLocationId)
-
-  const { data: passengersData } = await supabase
-    .from("passengers")
-    .select("*")
-    .eq("user_id", user.id)
-    .in("id", passengerIds)
-
-  const { data: locationsData } = await supabase
-    .from("locations")
-    .select("*")
-    .eq("user_id", user.id)
-    .in("id", locationIds)
-
-  const passengers = (passengersData ?? []) as Passenger[]
-  const locations = (locationsData ?? []) as Location[]
-
-  const passengerMap = new Map(passengers.map((p) => [p.id, p]))
-  const locationMap = new Map(locations.map((l) => [l.id, l]))
-
-  const routing = await createRoutingService(
-    (process.env.ROUTING_PROVIDER as "ors" | "google") ?? "ors",
-  )
-
-  const results: DriveSegmentResult[] = await Promise.all(
-    segments.map(async (seg) => {
-      const passenger = passengerMap.get(seg.passengerId)
-      const destination = locationMap.get(seg.destinationLocationId)
-
+  return Promise.all(
+    segments.map(async (seg): Promise<DriveSegmentResult> => {
+      const passenger = await getPassenger(seg.passengerId, userId)
       if (!passenger) {
         return { passengerId: seg.passengerId, passengerName: "Unknown", destinationName: "Unknown", distanceKm: 0, durationMin: 0, error: "Passenger not found" }
       }
+
+      const destination = await getLocation(seg.destinationLocationId, userId)
       if (!destination) {
         return { passengerId: seg.passengerId, passengerName: passenger.name, destinationName: "Unknown", distanceKm: 0, durationMin: 0, error: "Destination not found" }
       }
 
-      const from: Coords = { lat: passenger.home_lat!, lon: passenger.home_lon! }
-      const to: Coords = { lat: destination.lat!, lon: destination.lon! }
-
-      if (!from.lat || !from.lon) {
+      if (!passenger.home_lat || !passenger.home_lon) {
         return { passengerId: seg.passengerId, passengerName: passenger.name, destinationName: destination.name, distanceKm: 0, durationMin: 0, error: "Passenger address not geocoded — edit the passenger to fix" }
       }
-      if (!to.lat || !to.lon) {
+
+      if (!destination.lat || !destination.lon) {
         return { passengerId: seg.passengerId, passengerName: passenger.name, destinationName: destination.name, distanceKm: 0, durationMin: 0, error: "Destination not geocoded — edit the location to fix" }
       }
 
       try {
+        const from: Coords = { lat: passenger.home_lat, lon: passenger.home_lon }
+        const to: Coords = { lat: destination.lat, lon: destination.lon }
         const route = await routing.getRoute(from, to)
-        const roundTrip = calculateRoundTrip(route)
         return {
           passengerId: seg.passengerId,
           passengerName: passenger.name,
           destinationName: destination.name,
-          ...roundTrip,
+          ...calculateRoundTrip(route),
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : "Route calculation failed"
@@ -90,6 +60,4 @@ export async function calculateDriveDay(
       }
     }),
   )
-
-  return { results, error: null }
 }
