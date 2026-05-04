@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@ridelogger/routing": "*",
+    "dotenv": "^16.4.5",
     "@vendia/serverless-express": "^4.10.4",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.7",

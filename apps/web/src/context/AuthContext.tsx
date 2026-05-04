@@ -6,7 +6,8 @@ import { api, setToken, clearToken } from "@/lib/api/client"
 interface AuthContextType {
   accessToken: string | null
   isLoading: boolean
-  login: (email: string, password: string) => Promise<void>
+  login: (emailOrUsername: string, password: string) => Promise<void>
+  register: (email: string, username: string, password: string) => Promise<void>
   logout: () => Promise<void>
 }
 
@@ -29,8 +30,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  async function login(email: string, password: string) {
-    const { accessToken: token } = await api.auth.login(email, password)
+  async function login(emailOrUsername: string, password: string) {
+    const { accessToken: token } = await api.auth.login(emailOrUsername, password)
+    setToken(token)
+    setAccessToken(token)
+  }
+
+  async function register(email: string, username: string, password: string) {
+    const { accessToken: token } = await api.auth.register(email, username, password)
     setToken(token)
     setAccessToken(token)
   }
@@ -44,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ accessToken, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ accessToken, isLoading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   )

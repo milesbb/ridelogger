@@ -1,98 +1,100 @@
 # RideLogger
 
-A web app for volunteer drivers. Save passenger profiles and named locations, plan a drive day in minutes, and get a ready-to-copy table of distances and travel times for your paper form.
+Web app for volunteer drivers. Save passenger profiles and named locations, plan a drive day, and get a table of distances and times to copy onto your paper form.
 
-## How it works
-
-Jo drives elderly passengers to appointments. Before heading out she:
-1. Opens the app on her phone
-2. Selects the passengers she's driving that day
-3. Picks a destination for each from her saved locations (or adds a new one)
-4. Taps **Calculate** — the app fetches driving distance and duration for each passenger's round trip
-5. Copies the numbers onto her paper form
-
-## Tech stack
+## Stack
 
 | Layer | Choice |
 |---|---|
 | Monorepo | Turborepo + npm workspaces |
-| Framework | Next.js 14 (App Router) |
-| Styling | Tailwind CSS + shadcn/ui |
-| Database + Auth | Supabase (PostgreSQL + magic link auth) |
-| Routing API | OpenRouteService (abstracted — swap providers in `packages/routing`) |
-| Deployment | Vercel |
-| CI/CD | GitHub Actions (tests must pass before deploy) |
-| Testing | Vitest |
-
-## Prerequisites
-
-- Node >= 18
-- npm >= 9
-- A free [Supabase](https://supabase.com) project
-- A free [OpenRouteService](https://openrouteservice.org) API key
-- A [Vercel](https://vercel.com) account (for deployment)
+| Frontend | Next.js 14 (App Router), Tailwind, shadcn/ui |
+| Backend | Express.js on AWS Lambda |
+| Database | Supabase PostgreSQL |
+| Migrations | Flyway |
+| Routing API | OpenRouteService (swap providers in `packages/routing/`) |
+| Auth | JWT — 15 min access token + 30 day refresh token (httpOnly cookie) |
+| CI/CD | GitHub Actions (path-triggered, lint + test gate deploy) |
 
 ## Local setup
 
+**Prerequisites:** Node ≥ 18, npm ≥ 9, an [ORS API key](https://openrouteservice.org), a Postgres database (Supabase free tier works).
+
 ```bash
-# 1. Install dependencies
+# 1. Install
 npm install
 
-# 2. Create environment file
+# 2. API env vars
+cp apps/api/.env.example apps/api/.env
+# Edit apps/api/.env — fill in DATABASE_URL, ORS_API_KEY, JWT_SECRET
+
+# 3. Web env vars
 cp apps/web/.env.example apps/web/.env.local
-# Fill in NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY,
-# SUPABASE_SERVICE_ROLE_KEY, and ORS_API_KEY
+# NEXT_PUBLIC_API_URL is already set to http://localhost:4000
 
-# 3. Run database migrations (requires Supabase CLI)
-npx supabase db push
+# 4. Run DB migrations (Docker required)
+docker run --rm -v $(pwd)/db/migrations:/flyway/sql \
+  flyway/flyway:10-alpine \
+  -url="jdbc:postgresql://<host>:<port>/<db>" \
+  -user="<user>" -password="<pass>" migrate
 
-# 4. Start the dev server
+# 5. Start dev servers (web :3000, API :4000)
 npm run dev
 ```
 
-The app will be at `http://localhost:3000`.
+## DB migrations
 
-## Running tests
+Migrations live in `db/migrations/` and follow Flyway naming: `V1__description.sql`, `V2__description.sql`, etc.
+
+**To add a migration:** create `db/migrations/V<next>__<description>.sql` and commit it. CI runs Flyway automatically before deploying the API.
+
+**To run locally** (see step 4 above, or use the Flyway CLI if you have Java installed).
+
+## Tests
 
 ```bash
-# Run all tests once (across all packages)
-npm run test
-
-# Watch mode for a specific package
-cd packages/routing && npm run test:watch
-cd apps/web && npm run test:watch
+npm test           # run all tests
+npm run test:watch # watch mode (run from apps/web or packages/routing)
 ```
-
-## Adding a new routing provider
-
-1. Create `packages/routing/src/<provider>.ts` implementing `RoutingService`
-2. Add a new case in `packages/routing/src/index.ts` `createRoutingService()`
-3. Set `ROUTING_PROVIDER=<provider>` in your `.env.local`
-
-See [packages/routing/src/ors.ts](packages/routing/src/ors.ts) as a reference implementation.
 
 ## CI/CD
 
-Every push to `main` runs:
-1. `npm run test` (all Vitest suites via Turborepo)
-2. If tests pass → deploy to Vercel production
-3. If tests fail → deploy is blocked
+Two workflows, each triggered only when their relevant paths change:
 
-Required GitHub secrets: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`.  
-See [Vercel docs](https://vercel.com/docs/cli) for how to obtain these.
+| Workflow | Triggers on | Jobs |
+|---|---|---|
+| `api.yml` | `apps/api/**`, `packages/**` | lint → test → migrate → deploy to Lambda |
+| `web.yml` | `apps/web/**`, `packages/**` | lint → test → deploy to Vercel |
 
-## Project structure
+Deploy only runs on push to `main`. PRs run lint + test only.
 
-```
-ridelogger/
-├── apps/
-│   └── web/              # Next.js app
-│       ├── src/app/      # App Router pages
-│       ├── src/components/
-│       └── src/lib/
-├── packages/
-│   └── routing/          # Pluggable routing service
-│       └── src/
-├── .github/workflows/    # CI/CD
-└── README.md
-```
+**Required GitHub secrets:**
+
+| Secret | Used by |
+|---|---|
+| `AWS_ACCESS_KEY_ID` | api.yml |
+| `AWS_SECRET_ACCESS_KEY` | api.yml |
+| `AWS_REGION` | api.yml |
+| `VERCEL_TOKEN` | web.yml |
+| `VERCEL_ORG_ID` | web.yml |
+| `VERCEL_PROJECT_ID` | web.yml |
+
+## SSM Parameter Store
+
+All production secrets are stored in AWS SSM Parameter Store. These must exist before the first CI deploy. Create them in the AWS Console or with `aws ssm put-parameter`.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `/ridelogger/production/database-url` | SecureString | `postgresql://user:pass@host:5432/db` — for the API |
+| `/ridelogger/production/flyway-url` | String | `jdbc:postgresql://host:5432/db` — for Flyway in CI |
+| `/ridelogger/production/database-user` | String | DB username |
+| `/ridelogger/production/database-password` | SecureString | DB password |
+| `/ridelogger/production/jwt-secret` | SecureString | `openssl rand -hex 64` |
+| `/ridelogger/production/ors-api-key` | SecureString | From openrouteservice.org |
+
+## Swapping the routing provider
+
+1. Create `packages/routing/src/<provider>.ts` implementing `RoutingService`
+2. Add a case in `packages/routing/src/index.ts`
+3. Update `ROUTING_PROVIDER` env var
+
+See `packages/routing/src/ors.ts` as a reference.

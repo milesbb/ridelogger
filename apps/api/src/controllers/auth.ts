@@ -20,20 +20,18 @@ function cookieOpts(maxAge: number) {
 
 const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000
 
+function setAuthCookies(res: Response, refreshToken: string, userId: string) {
+  res.cookie(COOKIE_NAME, refreshToken, cookieOpts(THIRTY_DAYS))
+  res.cookie(USER_ID_COOKIE, userId, { ...cookieOpts(THIRTY_DAYS), httpOnly: false })
+}
+
 router.post("/login", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { email, password } = req.body
-    if (!email || !password) throw Errors.BadRequest("email and password required")
+    const { emailOrUsername, password } = req.body
+    if (!emailOrUsername || !password) throw Errors.BadRequest("emailOrUsername and password required")
 
-    const { accessToken, refreshToken } = await loginUser(email, password)
-
-    // Store userId in a non-httpOnly cookie so the refresh endpoint can read it
-    // (httpOnly prevents JS access but server can still read it)
-    const userId = (await import("../data/users")).getUserByEmail(email.toLowerCase())
-      .then(u => u!.id)
-
-    res.cookie(COOKIE_NAME, refreshToken, cookieOpts(THIRTY_DAYS))
-    res.cookie(USER_ID_COOKIE, await userId, { ...cookieOpts(THIRTY_DAYS), httpOnly: false })
+    const { accessToken, refreshToken, userId } = await loginUser(emailOrUsername, password)
+    setAuthCookies(res, refreshToken, userId)
     res.json({ accessToken })
   } catch (err) {
     next(err)
@@ -65,19 +63,13 @@ router.post("/logout", requireAuth, async (req: Request, res: Response, next: Ne
   }
 })
 
-// No sign-up UI — use this endpoint programmatically to create accounts
 router.post("/register", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { email, password, secret } = req.body
-    if (secret !== process.env.REGISTER_SECRET) throw Errors.Unauthorized()
-    if (!email || !password) throw Errors.BadRequest("email and password required")
+    const { email, username, password } = req.body
+    if (!email || !username || !password) throw Errors.BadRequest("email, username, and password required")
 
-    const { accessToken, refreshToken } = await registerUser(email, password)
-    const userId = (await import("../data/users")).getUserByEmail(email.toLowerCase())
-      .then(u => u!.id)
-
-    res.cookie(COOKIE_NAME, refreshToken, cookieOpts(THIRTY_DAYS))
-    res.cookie(USER_ID_COOKIE, await userId, { ...cookieOpts(THIRTY_DAYS), httpOnly: false })
+    const { accessToken, refreshToken, userId } = await registerUser(email, username, password)
+    setAuthCookies(res, refreshToken, userId)
     res.status(201).json({ accessToken })
   } catch (err) {
     next(err)

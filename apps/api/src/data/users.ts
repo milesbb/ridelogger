@@ -1,9 +1,10 @@
 import { query, queryOne } from "../utils/connections"
-import { col, optCol } from "./utils"
+import { col } from "./utils"
 
 export interface User {
   id: string
   email: string
+  username: string
   password_hash: string
   created_at: string
 }
@@ -12,31 +13,34 @@ function parseUser(row: Record<string, unknown>): User {
   return {
     id: col(row, "id"),
     email: col(row, "email"),
+    username: col(row, "username"),
     password_hash: col(row, "password_hash"),
     created_at: col(row, "created_at"),
   }
 }
 
-export async function getUserByEmail(email: string): Promise<User | null> {
+const USER_COLS = "id, email, username, password_hash, created_at"
+
+export async function getUserByEmailOrUsername(identifier: string): Promise<User | null> {
   const row = await queryOne<Record<string, unknown>>(
-    "SELECT id, email, password_hash, created_at FROM users WHERE email = $1",
-    [email],
+    `SELECT ${USER_COLS} FROM users WHERE email = $1 OR username = $1`,
+    [identifier],
   )
   return row ? parseUser(row) : null
 }
 
 export async function getUserById(id: string): Promise<User | null> {
   const row = await queryOne<Record<string, unknown>>(
-    "SELECT id, email, password_hash, created_at FROM users WHERE id = $1",
+    `SELECT ${USER_COLS} FROM users WHERE id = $1`,
     [id],
   )
   return row ? parseUser(row) : null
 }
 
-export async function createUser(email: string, passwordHash: string): Promise<User> {
+export async function createUser(email: string, username: string, passwordHash: string): Promise<User> {
   const rows = await query<Record<string, unknown>>(
-    "INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email, password_hash, created_at",
-    [email, passwordHash],
+    `INSERT INTO users (email, username, password_hash) VALUES ($1, $2, $3) RETURNING ${USER_COLS}`,
+    [email, username, passwordHash],
   )
   return parseUser(rows[0])
 }
@@ -45,6 +49,14 @@ export async function emailExists(email: string): Promise<boolean> {
   const row = await queryOne<Record<string, unknown>>(
     "SELECT 1 FROM users WHERE email = $1",
     [email],
+  )
+  return row !== null
+}
+
+export async function usernameExists(username: string): Promise<boolean> {
+  const row = await queryOne<Record<string, unknown>>(
+    "SELECT 1 FROM users WHERE username = $1",
+    [username],
   )
   return row !== null
 }

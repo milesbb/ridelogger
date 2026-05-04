@@ -5,6 +5,10 @@ Parameters:
   DeploymentBucket:
     Type: String
     Description: S3 bucket used for Lambda deployment packages
+  LambdaS3Key:
+    Type: String
+    Default: api.zip
+    Description: S3 key for the Lambda deployment ZIP (use versioned key in CI)
   FrontendUrl:
     Type: String
     Default: https://ridelogger-web-milesbbs-projects.vercel.app
@@ -33,18 +37,16 @@ Resources:
       Role: !GetAtt LambdaRole.Arn
       Code:
         S3Bucket: !Ref DeploymentBucket
-        S3Key: api.zip
+        S3Key: !Ref LambdaS3Key
       Timeout: 30
       MemorySize: 256
       Environment:
         Variables:
           NODE_ENV: production
           FRONTEND_URL: !Ref FrontendUrl
-          # Set these in AWS SSM and reference them here, or set directly:
-          # DATABASE_URL: "{{resolve:ssm:/ridelogger/prod/database-url}}"
-          # JWT_SECRET: "{{resolve:ssm-secure:/ridelogger/prod/jwt-secret}}"
-          # ORS_API_KEY: "{{resolve:ssm:/ridelogger/prod/ors-api-key}}"
-          # REGISTER_SECRET: "{{resolve:ssm-secure:/ridelogger/prod/register-secret}}"
+          DATABASE_URL: "{{resolve:ssm-secure:/ridelogger/production/database-url}}"
+          JWT_SECRET: "{{resolve:ssm-secure:/ridelogger/production/jwt-secret}}"
+          ORS_API_KEY: "{{resolve:ssm-secure:/ridelogger/production/ors-api-key}}"
 
   ApiGateway:
     Type: AWS::ApiGatewayV2::Api

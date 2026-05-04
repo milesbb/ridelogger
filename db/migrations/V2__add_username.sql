@@ -1,0 +1,3 @@
+ALTER TABLE users ADD COLUMN username TEXT UNIQUE NOT NULL DEFAULT '';
+ALTER TABLE users ALTER COLUMN username DROP DEFAULT;
+CREATE UNIQUE INDEX users_username_idx ON users(username);

@@ -62,5 +62,8 @@ coverage/
 # Vercel
 .vercel/
 
+# Supabase CLI artefacts (migrations managed by Flyway)
+apps/web/supabase/
+
 # Claude Code (personal overrides — don't commit)
 .claude/settings.local.json

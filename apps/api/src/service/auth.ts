@@ -1,7 +1,13 @@
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
 import crypto from "crypto"
-import { getUserByEmail, getUserById, createUser, emailExists } from "../data/users"
+import {
+  getUserByEmailOrUsername,
+  getUserById,
+  createUser,
+  emailExists,
+  usernameExists,
+} from "../data/users"
 import { storeRefreshToken, getActiveRefreshTokens, revokeAllUserTokens } from "../data/auth"
 import { Errors } from "../utils/errorTypes"
 
@@ -26,37 +32,35 @@ export function verifyAccessToken(token: string): { sub: string } {
   }
 }
 
+async function issueTokens(userId: string): Promise<{ accessToken: string; refreshToken: string }> {
+  const accessToken = signAccessToken(userId)
+  const rawRefreshToken = crypto.randomBytes(48).toString("hex")
+  const tokenHash = await bcrypt.hash(rawRefreshToken, 10)
+  const expiresAt = new Date(Date.now() + REFRESH_TOKEN_DAYS * 24 * 60 * 60 * 1000)
+  await storeRefreshToken(userId, tokenHash, expiresAt)
+  return { accessToken, refreshToken: rawRefreshToken }
+}
+
 export async function loginUser(
-  email: string,
+  identifier: string,
   password: string,
-): Promise<{ accessToken: string; refreshToken: string }> {
-  const user = await getUserByEmail(email.toLowerCase())
+): Promise<{ accessToken: string; refreshToken: string; userId: string }> {
+  const user = await getUserByEmailOrUsername(identifier.toLowerCase())
   if (!user) throw Errors.InvalidCredentials()
 
   const valid = await bcrypt.compare(password, user.password_hash)
   if (!valid) throw Errors.InvalidCredentials()
 
-  const accessToken = signAccessToken(user.id)
-  const rawRefreshToken = crypto.randomBytes(48).toString("hex")
-  const tokenHash = await bcrypt.hash(rawRefreshToken, 10)
-  const expiresAt = new Date(Date.now() + REFRESH_TOKEN_DAYS * 24 * 60 * 60 * 1000)
-
-  await storeRefreshToken(user.id, tokenHash, expiresAt)
-
-  return { accessToken, refreshToken: rawRefreshToken }
+  const tokens = await issueTokens(user.id)
+  return { ...tokens, userId: user.id }
 }
 
-export async function refreshUserToken(
-  rawToken: string,
-  userId: string,
-): Promise<string> {
+export async function refreshUserToken(rawToken: string, userId: string): Promise<string> {
   const tokens = await getActiveRefreshTokens(userId)
-
   for (const t of tokens) {
     const match = await bcrypt.compare(rawToken, t.token_hash)
     if (match) return signAccessToken(userId)
   }
-
   throw Errors.Unauthorized()
 }
 
@@ -66,20 +70,18 @@ export async function logoutUser(userId: string): Promise<void> {
 
 export async function registerUser(
   email: string,
+  username: string,
   password: string,
-): Promise<{ accessToken: string; refreshToken: string }> {
-  const normalised = email.toLowerCase()
-  if (await emailExists(normalised)) throw Errors.Conflict("Email already registered")
+): Promise<{ accessToken: string; refreshToken: string; userId: string }> {
+  const normalisedEmail = email.toLowerCase()
+  const normalisedUsername = username.toLowerCase()
+
+  if (await emailExists(normalisedEmail)) throw Errors.Conflict("Email already registered")
+  if (await usernameExists(normalisedUsername)) throw Errors.Conflict("Username already taken")
 
   const passwordHash = await bcrypt.hash(password, 12)
-  const user = await createUser(normalised, passwordHash)
+  const user = await createUser(normalisedEmail, normalisedUsername, passwordHash)
 
-  const accessToken = signAccessToken(user.id)
-  const rawRefreshToken = crypto.randomBytes(48).toString("hex")
-  const tokenHash = await bcrypt.hash(rawRefreshToken, 10)
-  const expiresAt = new Date(Date.now() + REFRESH_TOKEN_DAYS * 24 * 60 * 60 * 1000)
-
-  await storeRefreshToken(user.id, tokenHash, expiresAt)
-
-  return { accessToken, refreshToken: rawRefreshToken }
+  const tokens = await issueTokens(user.id)
+  return { ...tokens, userId: user.id }
 }

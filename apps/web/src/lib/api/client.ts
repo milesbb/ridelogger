@@ -67,10 +67,15 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 
 export const api = {
   auth: {
-    login: (email: string, password: string) =>
+    login: (emailOrUsername: string, password: string) =>
       apiFetch<{ accessToken: string }>("/v1/auth/login", {
         method: "POST",
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ emailOrUsername, password }),
+      }),
+    register: (email: string, username: string, password: string) =>
+      apiFetch<{ accessToken: string }>("/v1/auth/register", {
+        method: "POST",
+        body: JSON.stringify({ email, username, password }),
       }),
     logout: (token: string | null) =>
       fetch(`${API_URL}/v1/auth/logout`, {
