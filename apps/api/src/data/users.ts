@@ -1,5 +1,5 @@
-import { query, queryOne } from "../utils/connections"
-import { col } from "./utils"
+import { query, queryOne } from '../utils/connections'
+import { col } from './utils'
 
 export interface User {
   id: string
@@ -11,15 +11,15 @@ export interface User {
 
 function parseUser(row: Record<string, unknown>): User {
   return {
-    id: col(row, "id"),
-    email: col(row, "email"),
-    username: col(row, "username"),
-    password_hash: col(row, "password_hash"),
-    created_at: col(row, "created_at"),
+    id: col(row, 'id'),
+    email: col(row, 'email'),
+    username: col(row, 'username'),
+    password_hash: col(row, 'password_hash'),
+    created_at: col(row, 'created_at'),
   }
 }
 
-const USER_COLS = "id, email, username, password_hash, created_at"
+const USER_COLS = 'id, email, username, password_hash, created_at'
 
 export async function getUserByEmailOrUsername(identifier: string): Promise<User | null> {
   const row = await queryOne<Record<string, unknown>>(
@@ -47,7 +47,7 @@ export async function createUser(email: string, username: string, passwordHash: 
 
 export async function emailExists(email: string): Promise<boolean> {
   const row = await queryOne<Record<string, unknown>>(
-    "SELECT 1 FROM users WHERE email = $1",
+    'SELECT 1 FROM users WHERE email = $1',
     [email],
   )
   return row !== null
@@ -55,7 +55,7 @@ export async function emailExists(email: string): Promise<boolean> {
 
 export async function usernameExists(username: string): Promise<boolean> {
   const row = await queryOne<Record<string, unknown>>(
-    "SELECT 1 FROM users WHERE username = $1",
+    'SELECT 1 FROM users WHERE username = $1',
     [username],
   )
   return row !== null

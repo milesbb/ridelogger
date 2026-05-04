@@ -1,5 +1,5 @@
-import { query, queryOne } from "../utils/connections"
-import { col, optCol } from "./utils"
+import { query, queryOne } from '../utils/connections'
+import { col, optCol } from './utils'
 
 export interface Passenger {
   id: string
@@ -15,21 +15,21 @@ export interface Passenger {
 
 function parse(row: Record<string, unknown>): Passenger {
   return {
-    id: col(row, "id"),
-    user_id: col(row, "user_id"),
-    name: col(row, "name"),
-    home_address: col(row, "home_address"),
-    home_lat: optCol(row, "home_lat"),
-    home_lon: optCol(row, "home_lon"),
-    notes: optCol(row, "notes"),
-    created_at: col(row, "created_at"),
-    updated_at: col(row, "updated_at"),
+    id: col(row, 'id'),
+    user_id: col(row, 'user_id'),
+    name: col(row, 'name'),
+    home_address: col(row, 'home_address'),
+    home_lat: optCol(row, 'home_lat'),
+    home_lon: optCol(row, 'home_lon'),
+    notes: optCol(row, 'notes'),
+    created_at: col(row, 'created_at'),
+    updated_at: col(row, 'updated_at'),
   }
 }
 
 export async function listPassengers(userId: string): Promise<Passenger[]> {
   const rows = await query<Record<string, unknown>>(
-    "SELECT * FROM passengers WHERE user_id = $1 ORDER BY name",
+    'SELECT * FROM passengers WHERE user_id = $1 ORDER BY name',
     [userId],
   )
   return rows.map(parse)
@@ -37,7 +37,7 @@ export async function listPassengers(userId: string): Promise<Passenger[]> {
 
 export async function getPassenger(id: string, userId: string): Promise<Passenger | null> {
   const row = await queryOne<Record<string, unknown>>(
-    "SELECT * FROM passengers WHERE id = $1 AND user_id = $2",
+    'SELECT * FROM passengers WHERE id = $1 AND user_id = $2',
     [id, userId],
   )
   return row ? parse(row) : null
@@ -73,7 +73,7 @@ export async function updatePassenger(
 
 export async function deletePassenger(id: string, userId: string): Promise<boolean> {
   const rows = await query<Record<string, unknown>>(
-    "DELETE FROM passengers WHERE id = $1 AND user_id = $2 RETURNING id",
+    'DELETE FROM passengers WHERE id = $1 AND user_id = $2 RETURNING id',
     [id, userId],
   )
   return rows.length > 0

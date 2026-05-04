@@ -1,14 +1,26 @@
-import { createRoutingService, type Coords } from "@ridelogger/routing"
-import { Errors } from "../utils/errorTypes"
+import { createRoutingService, type Coords } from '@ridelogger/routing'
+import { getOrsApiKey } from '../utils/aws/auth'
+import { Errors } from '../utils/errorTypes'
+
+let cachedOrsKey: string | null = null
+
+async function getApiKey(): Promise<string | undefined> {
+  if (process.env.NODE_ENV !== 'production') {
+    return process.env.ORS_API_KEY
+  }
+  if (!cachedOrsKey) {
+    cachedOrsKey = await getOrsApiKey()
+  }
+  return cachedOrsKey
+}
 
 export async function geocodeAddress(address: string): Promise<Coords> {
-  const provider = (process.env.ROUTING_PROVIDER as "ors" | "google") ?? "ors"
-  const routing = await createRoutingService(provider)
+  const provider = (process.env.ROUTING_PROVIDER as 'ors' | 'google') ?? 'ors'
+  const apiKey = await getApiKey()
+  const routing = await createRoutingService(provider, apiKey)
   try {
     return await routing.geocode(address)
   } catch {
-    throw Errors.BadRequest(
-      "Could not geocode that address — please check it and try again.",
-    )
+    throw Errors.BadRequest('Could not geocode that address — please check it and try again.')
   }
 }

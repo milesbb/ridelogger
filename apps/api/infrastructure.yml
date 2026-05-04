@@ -27,6 +27,19 @@ Resources:
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: RideLoggerSSMAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                  - ssm:GetParameters
+                Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/ridelogger/production/*
+              - Effect: Allow
+                Action: kms:Decrypt
+                Resource: "*"
 
   ApiFunction:
     Type: AWS::Lambda::Function
@@ -44,9 +57,14 @@ Resources:
         Variables:
           NODE_ENV: production
           FRONTEND_URL: !Ref FrontendUrl
-          DATABASE_URL: "{{resolve:ssm-secure:/ridelogger/production/database-url}}"
-          JWT_SECRET: "{{resolve:ssm-secure:/ridelogger/production/jwt-secret}}"
-          ORS_API_KEY: "{{resolve:ssm-secure:/ridelogger/production/ors-api-key}}"
+          DB_HOST_PARAM: /ridelogger/production/database-host
+          DB_NAME_PARAM: /ridelogger/production/database-name
+          DB_PASS_PARAM: /ridelogger/production/database-password
+          DB_PORT_PARAM: /ridelogger/production/database-port
+          DB_URI_PARAM: /ridelogger/production/database-uri
+          DB_USER_PARAM: /ridelogger/production/database-user
+          JWT_SECRET: /ridelogger/production/jwt-secret
+          ORS_API_KEY: /ridelogger/production/ors-api-key
 
   ApiGateway:
     Type: AWS::ApiGatewayV2::Api

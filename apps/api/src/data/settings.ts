@@ -1,5 +1,5 @@
-import { query, queryOne } from "../utils/connections"
-import { col, optCol } from "./utils"
+import { query, queryOne } from '../utils/connections'
+import { col, optCol } from './utils'
 
 export interface AppSettings {
   id: string
@@ -13,19 +13,19 @@ export interface AppSettings {
 
 function parse(row: Record<string, unknown>): AppSettings {
   return {
-    id: col(row, "id"),
-    user_id: col(row, "user_id"),
-    home_address: col(row, "home_address"),
-    home_lat: optCol(row, "home_lat"),
-    home_lon: optCol(row, "home_lon"),
-    created_at: col(row, "created_at"),
-    updated_at: col(row, "updated_at"),
+    id: col(row, 'id'),
+    user_id: col(row, 'user_id'),
+    home_address: col(row, 'home_address'),
+    home_lat: optCol(row, 'home_lat'),
+    home_lon: optCol(row, 'home_lon'),
+    created_at: col(row, 'created_at'),
+    updated_at: col(row, 'updated_at'),
   }
 }
 
 export async function getSettings(userId: string): Promise<AppSettings | null> {
   const row = await queryOne<Record<string, unknown>>(
-    "SELECT * FROM app_settings WHERE user_id = $1",
+    'SELECT * FROM app_settings WHERE user_id = $1',
     [userId],
   )
   return row ? parse(row) : null

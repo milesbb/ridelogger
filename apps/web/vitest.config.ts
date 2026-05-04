@@ -3,13 +3,14 @@ import react from "@vitejs/plugin-react"
 import { resolve } from "path"
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react()] as any,
   test: {
     environment: "node",
     globals: true,
+    setupFiles: ["./src/test-setup.ts"],
     environmentMatchGlobs: [
-      ["**/*.test.tsx", "jsdom"],
-      ["**/components/**/*.test.ts", "jsdom"],
+      ["**/*.test.tsx", "happy-dom"],
+      ["**/components/**/*.test.ts", "happy-dom"],
     ],
   },
   resolve: {

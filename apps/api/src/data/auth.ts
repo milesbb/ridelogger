@@ -1,5 +1,5 @@
-import { query, queryOne } from "../utils/connections"
-import { col, optCol } from "./utils"
+import { query, queryOne } from '../utils/connections'
+import { col, optCol } from './utils'
 
 export interface RefreshToken {
   id: string
@@ -11,11 +11,11 @@ export interface RefreshToken {
 
 function parseToken(row: Record<string, unknown>): RefreshToken {
   return {
-    id: col(row, "id"),
-    user_id: col(row, "user_id"),
-    token_hash: col(row, "token_hash"),
-    expires_at: col(row, "expires_at"),
-    revoked_at: optCol(row, "revoked_at"),
+    id: col(row, 'id'),
+    user_id: col(row, 'user_id'),
+    token_hash: col(row, 'token_hash'),
+    expires_at: col(row, 'expires_at'),
+    revoked_at: optCol(row, 'revoked_at'),
   }
 }
 
@@ -25,7 +25,7 @@ export async function storeRefreshToken(
   expiresAt: Date,
 ): Promise<void> {
   await query(
-    "INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)",
+    'INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)',
     [userId, tokenHash, expiresAt],
   )
 }
@@ -44,7 +44,7 @@ export async function getActiveRefreshTokens(userId: string): Promise<RefreshTok
 
 export async function revokeAllUserTokens(userId: string): Promise<void> {
   await query(
-    "UPDATE refresh_tokens SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL",
+    'UPDATE refresh_tokens SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL',
     [userId],
   )
 }

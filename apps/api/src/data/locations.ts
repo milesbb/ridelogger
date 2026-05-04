@@ -1,5 +1,5 @@
-import { query, queryOne } from "../utils/connections"
-import { col, optCol } from "./utils"
+import { query, queryOne } from '../utils/connections'
+import { col, optCol } from './utils'
 
 export interface Location {
   id: string
@@ -14,20 +14,20 @@ export interface Location {
 
 function parse(row: Record<string, unknown>): Location {
   return {
-    id: col(row, "id"),
-    user_id: col(row, "user_id"),
-    name: col(row, "name"),
-    address: col(row, "address"),
-    lat: optCol(row, "lat"),
-    lon: optCol(row, "lon"),
-    created_at: col(row, "created_at"),
-    updated_at: col(row, "updated_at"),
+    id: col(row, 'id'),
+    user_id: col(row, 'user_id'),
+    name: col(row, 'name'),
+    address: col(row, 'address'),
+    lat: optCol(row, 'lat'),
+    lon: optCol(row, 'lon'),
+    created_at: col(row, 'created_at'),
+    updated_at: col(row, 'updated_at'),
   }
 }
 
 export async function listLocations(userId: string): Promise<Location[]> {
   const rows = await query<Record<string, unknown>>(
-    "SELECT * FROM locations WHERE user_id = $1 ORDER BY name",
+    'SELECT * FROM locations WHERE user_id = $1 ORDER BY name',
     [userId],
   )
   return rows.map(parse)
@@ -35,7 +35,7 @@ export async function listLocations(userId: string): Promise<Location[]> {
 
 export async function getLocation(id: string, userId: string): Promise<Location | null> {
   const row = await queryOne<Record<string, unknown>>(
-    "SELECT * FROM locations WHERE id = $1 AND user_id = $2",
+    'SELECT * FROM locations WHERE id = $1 AND user_id = $2',
     [id, userId],
   )
   return row ? parse(row) : null
@@ -71,7 +71,7 @@ export async function updateLocation(
 
 export async function deleteLocation(id: string, userId: string): Promise<boolean> {
   const rows = await query<Record<string, unknown>>(
-    "DELETE FROM locations WHERE id = $1 AND user_id = $2 RETURNING id",
+    'DELETE FROM locations WHERE id = $1 AND user_id = $2 RETURNING id',
     [id, userId],
   )
   return rows.length > 0
