@@ -49,9 +49,11 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
         run: |
+          aws s3 cp apps/api/dist/api.zip s3://ridelogger-deployments-442090781375/api.zip --region $AWS_REGION
           aws lambda update-function-code \
             --function-name ridelogger-api \
-            --zip-file fileb://apps/api/dist/api.zip \
+            --s3-bucket ridelogger-deployments-442090781375 \
+            --s3-key api.zip \
             --region $AWS_REGION
 
   deploy-web:
