@@ -7,6 +7,8 @@ import { errorHandler } from "./middlewares/errorHandler"
 
 const app = express()
 
+app.set('trust proxy', 1)
+
 const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:3000"
 
 app.use(
