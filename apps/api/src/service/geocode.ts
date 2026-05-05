@@ -1,23 +1,26 @@
-import { createRoutingService, type Coords } from '@ridelogger/routing'
-import { getOrsApiKey } from '../utils/aws/auth'
+import { createRoutingService, type Coords, type RoutingProvider } from '@ridelogger/routing'
+import { getOrsApiKey, getGoogleApiKey } from '../utils/aws/auth'
 import { Errors } from '../utils/errorTypes'
 import logger from '../utils/logging'
 
 let cachedOrsKey: string | null = null
+let cachedGoogleKey: string | null = null
 
-async function getApiKey(): Promise<string | undefined> {
+async function getApiKey(provider: RoutingProvider): Promise<string | undefined> {
   if (process.env.NODE_ENV !== 'production') {
-    return process.env.ORS_API_KEY
+    return provider === 'google' ? process.env.GOOGLE_MAPS_API_KEY : process.env.ORS_API_KEY
   }
-  if (!cachedOrsKey) {
-    cachedOrsKey = await getOrsApiKey()
+  if (provider === 'google') {
+    if (!cachedGoogleKey) cachedGoogleKey = await getGoogleApiKey()
+    return cachedGoogleKey
   }
+  if (!cachedOrsKey) cachedOrsKey = await getOrsApiKey()
   return cachedOrsKey
 }
 
 export async function geocodeAddress(address: string): Promise<Coords> {
-  const provider = (process.env.ROUTING_PROVIDER as 'ors' | 'google') ?? 'ors'
-  const apiKey = await getApiKey()
+  const provider = (process.env.ROUTING_PROVIDER as RoutingProvider) ?? 'ors'
+  const apiKey = await getApiKey(provider)
   const routing = await createRoutingService(provider, apiKey)
   try {
     return await routing.geocode(address)

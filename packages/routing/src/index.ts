@@ -8,7 +8,7 @@ export function createRoutingService(provider: RoutingProvider = "ors", apiKey?:
     case "ors":
       return import("./ors").then((m) => m.createOrsService(apiKey))
     case "google":
-      throw new Error("Google Maps provider not yet implemented")
+      return import("./google").then((m) => m.createGoogleService(apiKey))
     default:
       throw new Error(`Unknown routing provider: ${provider}`)
   }

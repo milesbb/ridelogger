@@ -7,3 +7,7 @@ export async function getJWTSecret(): Promise<string> {
 export async function getOrsApiKey(): Promise<string> {
   return getSecureParameter(process.env.ORS_API_KEY!)
 }
+
+export async function getGoogleApiKey(): Promise<string> {
+  return getSecureParameter(process.env.GOOGLE_MAPS_API_KEY!)
+}
