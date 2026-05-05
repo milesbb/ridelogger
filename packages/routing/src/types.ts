@@ -13,6 +13,10 @@ export interface RoutingService {
   getRoute(from: Coords, to: Coords): Promise<RouteResult>
 }
 
+export interface Logger {
+  info(message: string, meta: Record<string, unknown>): void
+}
+
 export class RoutingError extends Error {
   constructor(
     message: string,

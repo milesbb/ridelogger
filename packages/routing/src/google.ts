@@ -1,4 +1,4 @@
-import type { Coords, RouteResult, RoutingService } from "./types"
+import type { Coords, Logger, RouteResult, RoutingService } from "./types"
 import { RoutingError } from "./types"
 
 const MAPS_BASE = "https://maps.googleapis.com/maps/api"
@@ -13,13 +13,14 @@ interface DirectionsResponse {
   routes: { legs: { distance: { value: number }; duration: { value: number } }[] }[]
 }
 
-export function createGoogleService(apiKey?: string): RoutingService {
+export function createGoogleService(apiKey?: string, logger?: Logger): RoutingService {
   const key = apiKey ?? process.env.GOOGLE_MAPS_API_KEY
   if (!key) throw new RoutingError("GOOGLE_MAPS_API_KEY is not set")
 
   return {
     async geocode(address: string): Promise<Coords> {
       const url = `${MAPS_BASE}/geocode/json?address=${encodeURIComponent(address)}&region=au&key=${key}`
+      logger?.info("google request", { op: "geocode", url: url.replace(key, "[redacted]") })
       const res = await fetch(url)
       if (!res.ok) {
         throw new RoutingError(`Google geocode failed: ${res.statusText}`, res.status)
@@ -39,6 +40,7 @@ export function createGoogleService(apiKey?: string): RoutingService {
       const origin = `${from.lat},${from.lon}`
       const destination = `${to.lat},${to.lon}`
       const url = `${MAPS_BASE}/directions/json?origin=${origin}&destination=${destination}&mode=driving&key=${key}`
+      logger?.info("google request", { op: "directions", url: url.replace(key, "[redacted]") })
       const res = await fetch(url)
       if (!res.ok) {
         throw new RoutingError(`Google directions failed: ${res.statusText}`, res.status)
