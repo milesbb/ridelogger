@@ -32,7 +32,7 @@ describe("ors.geocode", () => {
   })
 
   it("throws RoutingError when the response is not ok", async () => {
-    mockFetch.mockResolvedValueOnce({ ok: false, status: 401, statusText: "Unauthorized" })
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 401, statusText: "Unauthorized", text: async () => "Unauthorized" })
     await expect(service.geocode("anywhere")).rejects.toThrow(RoutingError)
   })
 
