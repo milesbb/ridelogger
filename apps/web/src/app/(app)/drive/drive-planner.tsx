@@ -146,8 +146,7 @@ export function DrivePlanner({ passengers, locations, onLocationsChange }: Props
                   open={slot.pickerOpen}
                   onClose={() => closePicker(slot.passenger.id)}
                   locations={locations}
-                  passengerHomeAddress={slot.passenger.home_address}
-                  passengerHomeId={`home-${slot.passenger.id}`}
+                  passengerHomeLocationIds={slots.map((s) => s.passenger.home_location_id)}
                   selected={slot.destinationId}
                   onSelect={(id, name) => setDestination(slot.passenger.id, id, name)}
                   onLocationAdded={(loc) => onLocationsChange([...locations, loc])}

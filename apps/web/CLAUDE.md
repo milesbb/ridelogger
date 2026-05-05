@@ -11,6 +11,10 @@ Next.js 14 App Router frontend, deployed to Vercel.
 | `src/lib/api/types.ts` | Shared API response types (`Passenger`, `Location`, `AppSettings`, etc.). |
 | `src/lib/drive-utils.ts` | Pure calculation functions (`calculateRoundTrip`, `sumResults`). |
 
+## Addresses
+
+All addresses in this app are stored as `locations` rows on the API. Any form or component that saves an address must go through the locations API or the specific resource API (e.g. `api.passengers.create` creates the location server-side). Never send raw address strings to endpoints that don't own location creation.
+
 ## Rules
 
 - **All API calls go through `api.*` in `lib/api/client.ts`.** Never call `fetch` directly from a component or page.

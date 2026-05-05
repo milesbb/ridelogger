@@ -76,3 +76,15 @@ export async function deleteLocation(id: string, userId: string): Promise<boolea
   )
   return rows.length > 0
 }
+
+export async function isLocationReferenced(id: string, userId: string): Promise<boolean> {
+  const row = await queryOne<{ exists: boolean }>(
+    `SELECT EXISTS(
+       SELECT 1 FROM passengers   WHERE home_location_id = $1 AND user_id = $2
+       UNION ALL
+       SELECT 1 FROM app_settings WHERE home_location_id = $1 AND user_id = $2
+     ) AS exists`,
+    [id, userId],
+  )
+  return row?.exists ?? false
+}

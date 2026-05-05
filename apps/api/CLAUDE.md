@@ -23,6 +23,10 @@ process.env.DB_URI_PARAM  →  "/ridelogger/production/database-uri"
 
 In local dev (`NODE_ENV !== 'production'`), `DATABASE_URL`, `JWT_SECRET`, and `ORS_API_KEY` are read directly from `.env`.
 
+## Addresses
+
+All addresses live in the `locations` table. No other table stores `address`, `lat`, or `lon` columns — they store a `location_id` FK instead. When a service operation involves saving an address, it must create or update a `locations` row and use that row's `id` as the FK. See `service/passengers.ts` and `service/settings.ts` for the pattern.
+
 ## Adding a new endpoint
 
 1. Add data function(s) in `src/data/<table>.ts` — plain SQL, typed return.

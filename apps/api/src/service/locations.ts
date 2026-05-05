@@ -36,6 +36,8 @@ export async function update(
 }
 
 export async function remove(id: string, userId: string): Promise<void> {
+  const inUse = await db.isLocationReferenced(id, userId)
+  if (inUse) throw Errors.Conflict("This location is saved as a home address — remove that reference first")
   const deleted = await db.deleteLocation(id, userId)
   if (!deleted) throw Errors.NotFound("Location")
 }

@@ -23,15 +23,16 @@ router.post("/", async (req: Request, res: Response, next: NextFunction) => {
 router.put("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as AuthenticatedRequest).userId
-    const { name, homeAddress, notes } = req.body
-    res.json(await svc.update(req.params.id, userId, { name, homeAddress, notes: notes ?? "" }))
+    const { name, notes, homeUpdate } = req.body
+    res.json(await svc.update(req.params.id, userId, { name, notes: notes ?? "", homeUpdate }))
   } catch (err) { next(err) }
 })
 
 router.delete("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as AuthenticatedRequest).userId
-    await svc.remove(req.params.id, userId)
+    const deleteHomeLocation = req.query.deleteHomeLocation === "true"
+    await svc.remove(req.params.id, userId, deleteHomeLocation)
     res.status(204).send()
   } catch (err) { next(err) }
 })

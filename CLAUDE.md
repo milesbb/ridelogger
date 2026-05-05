@@ -109,6 +109,14 @@ lib/           drive-utils.ts and other pure utilities
 - No barrel files (`index.ts` re-exports) except where the package boundary requires it.
 - Import from the specific file, not a directory index.
 
+### Addresses and locations
+
+- **All addresses are stored as rows in the `locations` table.** Never add `address`, `lat`, or `lon` columns to any other table.
+- Any table that needs to reference an address stores a `location_id` FK column pointing to `locations.id`.
+- When creating a record that owns an address (e.g. a passenger), create the `locations` row first, then insert the parent record with the returned `location_id`.
+- When updating an owned address, update the existing `locations` row in place (the FK stays the same).
+- When switching which location a record references, update only the FK column.
+
 ### SQL (API data layer)
 
 - Raw SQL only. No query builders, no ORMs.

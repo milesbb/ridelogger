@@ -34,13 +34,17 @@ export async function calculateDriveDay(
         return { passengerId: seg.passengerId, passengerName: "Unknown", destinationName: "Unknown", distanceKm: 0, durationMin: 0, error: "Passenger not found" }
       }
 
-      const destination = await getLocation(seg.destinationLocationId, userId)
+      const [homeLocation, destination] = await Promise.all([
+        getLocation(passenger.home_location_id, userId),
+        getLocation(seg.destinationLocationId, userId),
+      ])
+
       if (!destination) {
         return { passengerId: seg.passengerId, passengerName: passenger.name, destinationName: "Unknown", distanceKm: 0, durationMin: 0, error: "Destination not found" }
       }
 
-      if (!passenger.home_lat || !passenger.home_lon) {
-        return { passengerId: seg.passengerId, passengerName: passenger.name, destinationName: destination.name, distanceKm: 0, durationMin: 0, error: "Passenger address not geocoded — edit the passenger to fix" }
+      if (!homeLocation || !homeLocation.lat || !homeLocation.lon) {
+        return { passengerId: seg.passengerId, passengerName: passenger.name, destinationName: destination.name, distanceKm: 0, durationMin: 0, error: "Passenger home address not geocoded — edit the passenger to fix" }
       }
 
       if (!destination.lat || !destination.lon) {
@@ -48,7 +52,7 @@ export async function calculateDriveDay(
       }
 
       try {
-        const from: Coords = { lat: passenger.home_lat, lon: passenger.home_lon }
+        const from: Coords = { lat: homeLocation.lat, lon: homeLocation.lon }
         const to: Coords = { lat: destination.lat, lon: destination.lon }
         const route = await routing.getRoute(from, to)
         return {

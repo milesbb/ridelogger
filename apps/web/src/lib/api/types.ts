@@ -2,6 +2,7 @@ export interface Passenger {
   id: string
   user_id: string
   name: string
+  home_location_id: string
   home_address: string
   home_lat: number | null
   home_lon: number | null
@@ -24,6 +25,7 @@ export interface Location {
 export interface AppSettings {
   id: string
   user_id: string
+  home_location_id: string
   home_address: string
   home_lat: number | null
   home_lon: number | null

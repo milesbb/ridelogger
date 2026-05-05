@@ -89,10 +89,19 @@ export const api = {
     list: () => apiFetch<Passenger[]>("/v1/passengers"),
     create: (data: { name: string; homeAddress: string; notes: string }) =>
       apiFetch<Passenger>("/v1/passengers", { method: "POST", body: JSON.stringify(data) }),
-    update: (id: string, data: { name: string; homeAddress: string; notes: string }) =>
-      apiFetch<Passenger>(`/v1/passengers/${id}`, { method: "PUT", body: JSON.stringify(data) }),
-    delete: (id: string) =>
-      apiFetch<void>(`/v1/passengers/${id}`, { method: "DELETE" }),
+    update: (
+      id: string,
+      data: {
+        name: string
+        notes: string
+        homeUpdate:
+          | { type: "none" }
+          | { type: "edit"; address: string }
+          | { type: "switch"; locationId: string }
+      },
+    ) => apiFetch<Passenger>(`/v1/passengers/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    delete: (id: string, deleteHomeLocation = false) =>
+      apiFetch<void>(`/v1/passengers/${id}?deleteHomeLocation=${deleteHomeLocation}`, { method: "DELETE" }),
   },
   locations: {
     list: () => apiFetch<Location[]>("/v1/locations"),

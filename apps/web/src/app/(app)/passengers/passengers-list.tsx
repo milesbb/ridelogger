@@ -20,9 +20,10 @@ export function PassengersList({ passengers, onRefresh }: Props) {
 
   async function handleDelete(id: string) {
     if (!confirm("Remove this passenger?")) return
+    const deleteHomeLocation = confirm("Also delete their saved home location?")
     setDeletingId(id)
     try {
-      await api.passengers.delete(id)
+      await api.passengers.delete(id, deleteHomeLocation)
       onRefresh()
     } finally {
       setDeletingId(null)

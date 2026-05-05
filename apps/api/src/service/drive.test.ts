@@ -13,6 +13,7 @@ const mockPassenger = {
   id: 'p-1',
   user_id: 'u-1',
   name: 'Alice',
+  home_location_id: 'home-loc-1',
   home_address: '123 Main St',
   home_lat: -37.8136,
   home_lon: 144.9631,
@@ -21,7 +22,18 @@ const mockPassenger = {
   updated_at: new Date().toISOString(),
 }
 
-const mockLocation = {
+const mockHomeLocation = {
+  id: 'home-loc-1',
+  user_id: 'u-1',
+  name: "Alice's home",
+  address: '123 Main St',
+  lat: -37.8136,
+  lon: 144.9631,
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+}
+
+const mockDestination = {
   id: 'l-1',
   user_id: 'u-1',
   name: 'Hospital',
@@ -42,7 +54,9 @@ beforeEach(() => {
 describe('calculateDriveDay', () => {
   it('returns route result for a valid segment', async () => {
     vi.mocked(getPassenger).mockResolvedValue(mockPassenger)
-    vi.mocked(getLocation).mockResolvedValue(mockLocation)
+    vi.mocked(getLocation).mockImplementation(async (id) =>
+      id === 'home-loc-1' ? mockHomeLocation : mockDestination
+    )
     mockGetRoute.mockResolvedValue({ distanceKm: 12.4, durationMin: 22 })
 
     const results = await calculateDriveDay('u-1', [{ passengerId: 'p-1', destinationLocationId: 'l-1' }])
@@ -66,16 +80,20 @@ describe('calculateDriveDay', () => {
 
   it('returns an error result when destination not found', async () => {
     vi.mocked(getPassenger).mockResolvedValue(mockPassenger)
-    vi.mocked(getLocation).mockResolvedValue(null)
+    vi.mocked(getLocation).mockImplementation(async (id) =>
+      id === 'home-loc-1' ? mockHomeLocation : null
+    )
 
     const results = await calculateDriveDay('u-1', [{ passengerId: 'p-1', destinationLocationId: 'missing' }])
 
     expect(results[0].error).toBe('Destination not found')
   })
 
-  it('returns an error result when passenger has no coordinates', async () => {
-    vi.mocked(getPassenger).mockResolvedValue({ ...mockPassenger, home_lat: null, home_lon: null })
-    vi.mocked(getLocation).mockResolvedValue(mockLocation)
+  it('returns an error result when home location has no coordinates', async () => {
+    vi.mocked(getPassenger).mockResolvedValue(mockPassenger)
+    vi.mocked(getLocation).mockImplementation(async (id) =>
+      id === 'home-loc-1' ? { ...mockHomeLocation, lat: null, lon: null } : mockDestination
+    )
 
     const results = await calculateDriveDay('u-1', [{ passengerId: 'p-1', destinationLocationId: 'l-1' }])
 
@@ -84,7 +102,9 @@ describe('calculateDriveDay', () => {
 
   it('returns an error result when destination has no coordinates', async () => {
     vi.mocked(getPassenger).mockResolvedValue(mockPassenger)
-    vi.mocked(getLocation).mockResolvedValue({ ...mockLocation, lat: null, lon: null })
+    vi.mocked(getLocation).mockImplementation(async (id) =>
+      id === 'home-loc-1' ? mockHomeLocation : { ...mockDestination, lat: null, lon: null }
+    )
 
     const results = await calculateDriveDay('u-1', [{ passengerId: 'p-1', destinationLocationId: 'l-1' }])
 
@@ -93,7 +113,9 @@ describe('calculateDriveDay', () => {
 
   it('returns an error result when routing throws', async () => {
     vi.mocked(getPassenger).mockResolvedValue(mockPassenger)
-    vi.mocked(getLocation).mockResolvedValue(mockLocation)
+    vi.mocked(getLocation).mockImplementation(async (id) =>
+      id === 'home-loc-1' ? mockHomeLocation : mockDestination
+    )
     mockGetRoute.mockRejectedValue(new Error('No route found'))
 
     const results = await calculateDriveDay('u-1', [{ passengerId: 'p-1', destinationLocationId: 'l-1' }])
@@ -104,7 +126,9 @@ describe('calculateDriveDay', () => {
 
   it('processes multiple segments in parallel', async () => {
     vi.mocked(getPassenger).mockResolvedValue(mockPassenger)
-    vi.mocked(getLocation).mockResolvedValue(mockLocation)
+    vi.mocked(getLocation).mockImplementation(async (id) =>
+      id === 'home-loc-1' ? mockHomeLocation : mockDestination
+    )
     mockGetRoute.mockResolvedValue({ distanceKm: 5, durationMin: 10 })
 
     const results = await calculateDriveDay('u-1', [

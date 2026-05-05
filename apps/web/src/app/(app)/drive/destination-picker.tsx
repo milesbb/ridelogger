@@ -12,15 +12,14 @@ interface Props {
   open: boolean
   onClose: () => void
   locations: Location[]
-  passengerHomeAddress: string
-  passengerHomeId: string
+  passengerHomeLocationIds: string[]
   selected: string | null
   onSelect: (locationId: string, locationName: string) => void
   onLocationAdded: (location: Location) => void
 }
 
 export function DestinationPicker({
-  open, onClose, locations, passengerHomeAddress, passengerHomeId,
+  open, onClose, locations, passengerHomeLocationIds,
   selected, onSelect, onLocationAdded,
 }: Props) {
   const [showAddForm, setShowAddForm] = useState(false)
@@ -28,6 +27,10 @@ export function DestinationPicker({
   const [newAddress, setNewAddress] = useState("")
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState("")
+
+  const homeIdSet = new Set(passengerHomeLocationIds)
+  const homeLocations = locations.filter((l) => homeIdSet.has(l.id))
+  const otherLocations = locations.filter((l) => !homeIdSet.has(l.id))
 
   async function handleAddNew(e: React.FormEvent) {
     e.preventDefault()
@@ -48,46 +51,50 @@ export function DestinationPicker({
     }
   }
 
+  function LocationRow({ loc }: { loc: Location }) {
+    return (
+      <button
+        type="button"
+        onClick={() => { onSelect(loc.id, loc.name); onClose() }}
+        className="w-full flex items-center gap-3 rounded-md px-3 py-2.5 text-left hover:bg-accent transition-colors"
+      >
+        <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+        <div className="flex-1 min-w-0">
+          <span className="font-medium text-sm">{loc.name}</span>
+          <p className="text-xs text-muted-foreground truncate">{loc.address}</p>
+        </div>
+        {selected === loc.id && <Check className="h-4 w-4 shrink-0" />}
+      </button>
+    )
+  }
+
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md max-h-[80vh] flex flex-col">
         <DialogHeader><DialogTitle>Where to?</DialogTitle></DialogHeader>
 
         <div className="flex-1 overflow-y-auto -mx-6 px-6 space-y-1">
-          <button
-            type="button"
-            onClick={() => { onSelect(passengerHomeId, "Home"); onClose() }}
-            className="w-full flex items-center gap-3 rounded-md px-3 py-2.5 text-left hover:bg-accent transition-colors"
-          >
-            <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
-            <div className="flex-1 min-w-0">
-              <span className="font-medium text-sm">Home</span>
-              <p className="text-xs text-muted-foreground truncate">{passengerHomeAddress}</p>
-            </div>
-            {selected === passengerHomeId && <Check className="h-4 w-4 shrink-0" />}
-          </button>
-
-          {locations.length > 0 && (
-            <div className="pt-1 pb-0.5">
-              <p className="text-xs font-medium text-muted-foreground px-3 py-1">Saved locations</p>
-            </div>
+          {homeLocations.length > 0 && (
+            <>
+              <div className="pt-1 pb-0.5">
+                <p className="text-xs font-medium text-muted-foreground px-3 py-1">Passenger homes</p>
+              </div>
+              {homeLocations.map((loc) => <LocationRow key={loc.id} loc={loc} />)}
+            </>
           )}
 
-          {locations.map((loc) => (
-            <button
-              key={loc.id}
-              type="button"
-              onClick={() => { onSelect(loc.id, loc.name); onClose() }}
-              className="w-full flex items-center gap-3 rounded-md px-3 py-2.5 text-left hover:bg-accent transition-colors"
-            >
-              <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
-              <div className="flex-1 min-w-0">
-                <span className="font-medium text-sm">{loc.name}</span>
-                <p className="text-xs text-muted-foreground truncate">{loc.address}</p>
+          {otherLocations.length > 0 && (
+            <>
+              <div className="pt-1 pb-0.5">
+                <p className="text-xs font-medium text-muted-foreground px-3 py-1">Saved locations</p>
               </div>
-              {selected === loc.id && <Check className="h-4 w-4 shrink-0" />}
-            </button>
-          ))}
+              {otherLocations.map((loc) => <LocationRow key={loc.id} loc={loc} />)}
+            </>
+          )}
+
+          {locations.length === 0 && !showAddForm && (
+            <p className="text-sm text-muted-foreground px-3 py-4">No saved locations yet.</p>
+          )}
         </div>
 
         <div className="border-t pt-4 mt-2">
