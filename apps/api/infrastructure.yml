@@ -94,7 +94,7 @@ Resources:
       IntegrationUri: !Sub
         - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations
         - LambdaArn: !GetAtt ApiFunction.Arn
-      PayloadFormatVersion: "2.0"
+      PayloadFormatVersion: "1.0"
 
   ApiRoute:
     Type: AWS::ApiGatewayV2::Route
