@@ -4,10 +4,19 @@ import cookieParser from "cookie-parser"
 import rateLimit from "express-rate-limit"
 import router from "./controllers"
 import { errorHandler } from "./middlewares/errorHandler"
+import logger from "./utils/logging"
 
 const app = express()
 
 app.set('trust proxy', 1)
+
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const start = Date.now()
+  res.on('finish', () => {
+    logger.info('request', { method: req.method, url: req.url, status: res.statusCode, ms: Date.now() - start })
+  })
+  next()
+})
 
 const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:3000"
 
