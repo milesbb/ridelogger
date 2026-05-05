@@ -33,18 +33,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen flex flex-col">
       <header className="border-b bg-background sticky top-0 z-10">
         <nav className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setMenuOpen((o) => !o)}
-              className="md:hidden p-1 -ml-1 text-muted-foreground hover:text-foreground transition-colors"
-              aria-label={menuOpen ? "Close menu" : "Open menu"}
-            >
-              {menuOpen ? <X size={22} /> : <Menu size={22} />}
-            </button>
-            <Link href="/drive" className="font-semibold text-base">
-              RideLogger
-            </Link>
-          </div>
+          <Link href="/drive" className="font-semibold text-base">
+            RideLogger
+          </Link>
+
+          <button
+            onClick={() => setMenuOpen((o) => !o)}
+            className="md:hidden p-1 -mr-1 text-muted-foreground hover:text-foreground transition-colors"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+          >
+            {menuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
 
           <div className="hidden md:flex items-center gap-4 text-sm">
             <Link href="/passengers" className="text-muted-foreground hover:text-foreground transition-colors">
