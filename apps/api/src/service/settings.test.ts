@@ -17,7 +17,7 @@ const mockSettings = {
   updated_at: new Date().toISOString(),
 }
 
-beforeEach(() => vi.clearAllMocks())
+beforeEach(() => { vi.clearAllMocks() })
 
 describe('get', () => {
   it('returns settings when they exist', async () => {

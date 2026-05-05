@@ -87,8 +87,6 @@ describe('login', () => {
     render(<AuthProvider><TestConsumer /></AuthProvider>)
     await waitFor(() => expect(screen.getByTestId('loading').textContent).toBe('false'))
 
-    const { login } = useAuth as unknown as { login: (a: string, b: string) => Promise<void> }
-    // Verify the error bubbles up — tested via the page components
     await expect(api.auth.login('jo', 'wrong')).rejects.toThrow('Invalid credentials')
   })
 })

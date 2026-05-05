@@ -22,7 +22,7 @@ function makeRes() {
 const mockReq = { method: 'GET', path: '/test' } as Request
 const mockNext = vi.fn() as unknown as NextFunction
 
-beforeEach(() => vi.clearAllMocks())
+beforeEach(() => { vi.clearAllMocks() })
 
 describe('errorHandler', () => {
   it('responds with status and body from an AppError', () => {

@@ -19,7 +19,7 @@ const mockPassenger = {
   updated_at: new Date().toISOString(),
 }
 
-beforeEach(() => vi.clearAllMocks())
+beforeEach(() => { vi.clearAllMocks() })
 
 describe('list', () => {
   it('returns passengers from the data layer', async () => {

@@ -31,7 +31,7 @@ function buildApp() {
 
 const request = supertest(buildApp())
 
-beforeEach(() => vi.clearAllMocks())
+beforeEach(() => { vi.clearAllMocks() })
 
 describe('POST /login', () => {
   it('returns 200 with accessToken and sets cookies on success', async () => {
@@ -47,7 +47,7 @@ describe('POST /login', () => {
 
     expect(res.status).toBe(200)
     expect(res.body.accessToken).toBe('acc-tok')
-    const cookies = res.headers['set-cookie'] as string[]
+    const cookies = res.headers['set-cookie'] as unknown as string[]
     expect(cookies.some((c: string) => c.startsWith('refreshToken='))).toBe(true)
     expect(cookies.some((c: string) => c.startsWith('userId='))).toBe(true)
   })
@@ -134,7 +134,7 @@ describe('POST /logout', () => {
       .set('Authorization', 'Bearer acc-tok')
 
     expect(res.status).toBe(204)
-    const cookies = res.headers['set-cookie'] as string[]
+    const cookies = res.headers['set-cookie'] as unknown as string[]
     expect(cookies.some((c: string) => c.includes('refreshToken=;'))).toBe(true)
   })
 })

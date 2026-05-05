@@ -77,7 +77,7 @@ describe('apiFetch auto-refresh', () => {
       .mockResolvedValueOnce(ok({ accessToken: 'new-tok' }))   // refresh
       .mockResolvedValueOnce(ok({ data: 'ok' }))               // retry
 
-    const result = await api.passengers.list()
+    await api.passengers.list()
 
     expect(mockFetch).toHaveBeenCalledTimes(3)
     expect(sessionStorage.getItem('accessToken')).toBe('new-tok')
