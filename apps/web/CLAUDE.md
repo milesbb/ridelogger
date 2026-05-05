@@ -15,6 +15,13 @@ Next.js 14 App Router frontend, deployed to Vercel.
 
 All addresses in this app are stored as `locations` rows on the API. Any form or component that saves an address must go through the locations API or the specific resource API (e.g. `api.passengers.create` creates the location server-side). Never send raw address strings to endpoints that don't own location creation.
 
+## Component structure
+
+- **Split UI into focused components.** A page file (`page.tsx`) handles data fetching and routing only. Visual sections go into named child components in the same directory.
+- Each component does one thing. If a component is handling both data and rendering, or two unrelated pieces of UI, split it.
+- Keep components short and readable — if you need to scroll to understand a component, it should be split further.
+- Name components after what they display or what they do, not where they live (`PassengerForm`, not `Form`).
+
 ## Rules
 
 - **All API calls go through `api.*` in `lib/api/client.ts`.** Never call `fetch` directly from a component or page.
