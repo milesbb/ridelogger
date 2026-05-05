@@ -66,7 +66,7 @@ jobs:
         run: |
           FLYWAY_URL=$(aws ssm get-parameter \
             --name /ridelogger/production/flyway-url \
-            --query Parameter.Value --output text --region $AWS_REGION)
+            --with-decryption --query Parameter.Value --output text --region $AWS_REGION)
           DB_USER=$(aws ssm get-parameter \
             --name /ridelogger/production/database-user \
             --with-decryption --query Parameter.Value --output text --region $AWS_REGION)
