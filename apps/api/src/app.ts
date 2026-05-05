@@ -27,7 +27,8 @@ app.use(
 
 app.use(cookieParser())
 
-// @vendia/serverless-express sets req.body as a Buffer; Node.js 20 stream is unreadable by body-parser by then
+// In Lambda (Node.js 20) the request stream is never readable; parse the pre-set Buffer directly
+const isLambda = !!process.env.LAMBDA_TASK_ROOT
 app.use((req: Request, _res: Response, next: NextFunction) => {
   if (Buffer.isBuffer(req.body)) {
     try {
@@ -35,6 +36,8 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
     } catch {
       req.body = {}
     }
+  }
+  if (isLambda) {
     ;(req as { _body?: boolean })._body = true
   }
   next()
