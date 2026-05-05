@@ -14,7 +14,7 @@ export function createOrsService(
   return {
     async geocode(address: string): Promise<Coords> {
       const url = `${OLD_ORS_BASE}/geocode/search?api_key=${key}&text=${address}&boundary.country=AU,NZ&size=1`;
-      logger?.info("ors request", {
+      logger?.info("ors request:", {
         op: "geocode",
         url: url.replace(key, "[redacted]"),
       });
@@ -26,6 +26,9 @@ export function createOrsService(
           res.status,
         );
       }
+      logger?.info("successful ors request:", {
+        ...res,
+      });
       const data = (await res.json()) as {
         features?: { geometry: { coordinates: [number, number] } }[];
       };
@@ -57,6 +60,9 @@ export function createOrsService(
           res.status,
         );
       }
+      logger?.info("successful ors request:", {
+        ...res,
+      });
       const data = (await res.json()) as {
         routes?: { summary: { distance: number; duration: number } }[];
       };

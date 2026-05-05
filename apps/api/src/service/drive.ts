@@ -2,6 +2,8 @@ import { createRoutingService, type Coords } from "@ridelogger/routing"
 import { calculateRoundTrip } from "./driveUtils"
 import { getPassenger } from "../data/passengers"
 import { getLocation } from "../data/locations"
+import logger from "../utils/logging"
+import { getRoutingApiKey, getRoutingProvider } from "../utils/routingKey"
 
 export interface DriveSegmentInput {
   passengerId: string
@@ -21,8 +23,9 @@ export async function calculateDriveDay(
   userId: string,
   segments: DriveSegmentInput[],
 ): Promise<DriveSegmentResult[]> {
-  const provider = (process.env.ROUTING_PROVIDER as "ors" | "google") ?? "ors"
-  const routing = await createRoutingService(provider)
+  const provider = getRoutingProvider()
+  const apiKey = await getRoutingApiKey(provider)
+  const routing = await createRoutingService(provider, apiKey, logger)
 
   return Promise.all(
     segments.map(async (seg): Promise<DriveSegmentResult> => {
