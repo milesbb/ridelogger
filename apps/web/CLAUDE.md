@@ -19,6 +19,16 @@ Next.js 14 App Router frontend, deployed to Vercel.
 - Use shadcn/ui components from `components/ui/` before writing custom UI elements.
 - Tailwind only for styling — no CSS modules, no inline style objects.
 
+## Responsive design — non-negotiable rules
+
+**Every UI must work on mobile (all screen sizes) and laptop. There are no exceptions.**
+
+- Design mobile-first. Apply Tailwind responsive prefixes (`sm:`, `md:`, `lg:`) to scale up to larger screens, not the reverse.
+- No layout, interaction, or content may be inaccessible or broken at any screen width.
+- Touch targets must be tappable on mobile — minimum 44×44px.
+- Never rely on hover-only interactions. Every action must be reachable by touch.
+- Before marking any UI task complete, verify it at a narrow mobile viewport and a typical laptop viewport.
+
 ## Adding a new page
 
 1. Create `src/app/<route>/page.tsx` as a client component (`"use client"`) if it needs auth or interactivity.

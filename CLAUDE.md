@@ -62,6 +62,18 @@ lib/           drive-utils.ts and other pure utilities
 
 ---
 
+## UI/UX — non-negotiable rules
+
+**Every UI must work on mobile (all screen sizes) and laptop. There are no exceptions.**
+
+- Design mobile-first. Use Tailwind responsive prefixes (`sm:`, `md:`, `lg:`) to layer up to larger screens.
+- No layout, interaction, or content may be inaccessible or broken on any screen width.
+- Touch targets must be large enough to tap on mobile (minimum 44×44px).
+- Never rely on hover-only interactions — all actions must be reachable by touch.
+- Test every UI change at both a narrow mobile viewport and a typical laptop viewport before marking work complete.
+
+---
+
 ## Code style — non-negotiable rules
 
 ### Types
