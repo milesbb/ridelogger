@@ -33,15 +33,14 @@ export interface AppSettings {
   updated_at: string
 }
 
-export interface DriveSegmentInput {
-  passengerId: string
-  destinationLocationId: string
+export interface DriveLegInput {
+  fromLocationId: string
+  toLocationId: string
+  label: string
 }
 
-export interface DriveSegmentResult {
-  passengerId: string
-  passengerName: string
-  destinationName: string
+export interface DriveLegResult {
+  label: string
   distanceKm: number
   durationMin: number
   error?: string

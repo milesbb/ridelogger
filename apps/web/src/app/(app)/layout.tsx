@@ -46,6 +46,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </button>
 
           <div className="hidden md:flex items-center gap-4 text-sm">
+            <Link href="/drive" className="text-muted-foreground hover:text-foreground transition-colors">
+              Drive Day
+            </Link>
             <Link href="/passengers" className="text-muted-foreground hover:text-foreground transition-colors">
               Passengers
             </Link>
@@ -67,6 +70,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {menuOpen && (
           <div className="md:hidden border-t bg-background">
             <div className="max-w-2xl mx-auto px-4 py-1 flex flex-col text-sm">
+              <Link href="/drive" onClick={closeMenu} className="py-3 border-b text-muted-foreground hover:text-foreground transition-colors">
+                Drive Day
+              </Link>
               <Link href="/passengers" onClick={closeMenu} className="py-3 border-b text-muted-foreground hover:text-foreground transition-colors">
                 Passengers
               </Link>

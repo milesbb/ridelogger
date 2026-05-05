@@ -8,10 +8,10 @@ router.use(requireAuth)
 
 router.post("/calculate", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { segments } = req.body
-    if (!Array.isArray(segments)) throw Errors.BadRequest("segments must be an array")
+    const { legs } = req.body
+    if (!Array.isArray(legs)) throw Errors.BadRequest("legs must be an array")
     const userId = (req as AuthenticatedRequest).userId
-    res.json(await calculateDriveDay(userId, segments))
+    res.json(await calculateDriveDay(userId, legs))
   } catch (err) { next(err) }
 })
 

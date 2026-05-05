@@ -1,4 +1,4 @@
-import type { Passenger, Location, AppSettings, DriveSegmentInput, DriveSegmentResult } from "./types"
+import type { Passenger, Location, AppSettings, DriveLegInput, DriveLegResult } from "./types"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"
 
@@ -118,10 +118,10 @@ export const api = {
       apiFetch<AppSettings>("/v1/settings", { method: "PUT", body: JSON.stringify({ homeAddress }) }),
   },
   drive: {
-    calculate: (segments: DriveSegmentInput[]) =>
-      apiFetch<DriveSegmentResult[]>("/v1/drive/calculate", {
+    calculate: (legs: DriveLegInput[]) =>
+      apiFetch<DriveLegResult[]>("/v1/drive/calculate", {
         method: "POST",
-        body: JSON.stringify({ segments }),
+        body: JSON.stringify({ legs }),
       }),
   },
 }
