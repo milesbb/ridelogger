@@ -2,15 +2,22 @@ import type { Coords, Logger, RouteResult, RoutingService } from "./types";
 import { RoutingError } from "./types";
 
 const ORS_BASE = "https://api.heigit.org";
+const OLD_ORS_BASE = "https://api.openrouteservice.org";
 
-export function createOrsService(apiKey?: string, logger?: Logger): RoutingService {
+export function createOrsService(
+  apiKey?: string,
+  logger?: Logger,
+): RoutingService {
   const key = apiKey ?? process.env.ORS_API_KEY;
   if (!key) throw new RoutingError("ORS_API_KEY is not set");
 
   return {
     async geocode(address: string): Promise<Coords> {
-      const url = `${ORS_BASE}/pelias/v1/search?api_key=${key}&text=${address}&boundary.country=AU,NZ&size=1`;
-      logger?.info("ors request", { op: "geocode", url: url.replace(key, "[redacted]") });
+      const url = `${OLD_ORS_BASE}/geocode/search?api_key=${key}&text=${address}&boundary.country=AU,NZ&size=1`;
+      logger?.info("ors request", {
+        op: "geocode",
+        url: url.replace(key, "[redacted]"),
+      });
       const res = await fetch(url);
       if (!res.ok) {
         const body = await res.text().catch(() => "");
@@ -29,7 +36,7 @@ export function createOrsService(apiKey?: string, logger?: Logger): RoutingServi
     },
 
     async getRoute(from: Coords, to: Coords): Promise<RouteResult> {
-      const url = `${ORS_BASE}/openrouteservice/v2/directions/driving-car`;
+      const url = `${OLD_ORS_BASE}/v2/directions/driving-car`;
       logger?.info("ors request", { op: "directions", url, from, to });
       const res = await fetch(url, {
         method: "POST",
