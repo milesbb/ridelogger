@@ -1,6 +1,7 @@
 import { createRoutingService, type Coords } from '@ridelogger/routing'
 import { getOrsApiKey } from '../utils/aws/auth'
 import { Errors } from '../utils/errorTypes'
+import logger from '../utils/logging'
 
 let cachedOrsKey: string | null = null
 
@@ -20,7 +21,8 @@ export async function geocodeAddress(address: string): Promise<Coords> {
   const routing = await createRoutingService(provider, apiKey)
   try {
     return await routing.geocode(address)
-  } catch {
+  } catch (err) {
+    logger.error('Geocode failed', { address, err })
     throw Errors.BadRequest('Could not geocode that address — please check it and try again.')
   }
 }
