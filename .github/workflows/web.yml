@@ -5,13 +5,11 @@ on:
     branches: [main]
     paths:
       - 'apps/web/**'
-      - 'packages/**'
       - '.github/workflows/web.yml'
   pull_request:
     branches: [main]
     paths:
       - 'apps/web/**'
-      - 'packages/**'
       - '.github/workflows/web.yml'
 
 jobs:
