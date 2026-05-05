@@ -12,7 +12,8 @@ export function createOrsService(apiKey?: string): RoutingService {
       const url = `${ORS_BASE}/geocode/search?api_key=${key}&text=${encodeURIComponent(address)}&boundary.country=AU,NZ&size=1`
       const res = await fetch(url)
       if (!res.ok) {
-        throw new RoutingError(`ORS geocode failed: ${res.statusText}`, res.status)
+        const body = await res.text().catch(() => "")
+        throw new RoutingError(`ORS geocode failed: ${res.statusText} — ${body}`, res.status)
       }
       const data = await res.json() as { features?: { geometry: { coordinates: [number, number] } }[] }
       const feature = data?.features?.[0]
