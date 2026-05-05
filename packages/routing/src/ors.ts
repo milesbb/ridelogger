@@ -1,7 +1,7 @@
 import type { Coords, RouteResult, RoutingService } from "./types";
 import { RoutingError } from "./types";
 
-const ORS_BASE = "https://api.openrouteservice.org";
+const ORS_BASE = "https://api.heigit.org";
 
 export function createOrsService(apiKey?: string): RoutingService {
   const key = apiKey ?? process.env.ORS_API_KEY;
@@ -9,7 +9,7 @@ export function createOrsService(apiKey?: string): RoutingService {
 
   return {
     async geocode(address: string): Promise<Coords> {
-      const url = `${ORS_BASE}/geocode/search?api_key=${key}&text=${address}&boundary.country=AU,NZ&size=1`;
+      const url = `${ORS_BASE}/pelias/v1/search?api_key=${key}&text=${address}&boundary.country=AU,NZ&size=1`;
       const res = await fetch(url);
       if (!res.ok) {
         const body = await res.text().catch(() => "");
@@ -28,7 +28,7 @@ export function createOrsService(apiKey?: string): RoutingService {
     },
 
     async getRoute(from: Coords, to: Coords): Promise<RouteResult> {
-      const url = `${ORS_BASE}/v2/directions/driving-car`;
+      const url = `${ORS_BASE}/openrouteservice/v2/directions/driving-car`;
       const res = await fetch(url, {
         method: "POST",
         headers: {
