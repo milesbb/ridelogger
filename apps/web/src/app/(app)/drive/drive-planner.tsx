@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp, MapPin, Home } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DestinationPicker } from "./destination-picker"
 import { api } from "@/lib/api/client"
+import { DriveResultsTable } from "./drive-results-table"
 import type { Passenger, Location, AppSettings, DriveLegInput, DriveLegResult } from "@/lib/api/types"
 
 interface Props {
@@ -268,50 +269,7 @@ export function DrivePlanner({ passengers, locations, settings, onLocationsChang
         </div>
       )}
 
-      {results && (
-        <div className="space-y-3">
-          <p className="text-sm font-medium">Results</p>
-          <div className="border rounded-lg overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="text-left px-4 py-2 font-medium">Leg</th>
-                  <th className="text-right px-4 py-2 font-medium">km</th>
-                  <th className="text-right px-4 py-2 font-medium">min</th>
-                </tr>
-              </thead>
-              <tbody>
-                {results.map((r, i) => (
-                  <tr key={i} className="border-b last:border-0">
-                    <td className="px-4 py-2 text-muted-foreground">{r.label}</td>
-                    {r.error ? (
-                      <td colSpan={2} className="px-4 py-2 text-destructive text-xs">{r.error}</td>
-                    ) : (
-                      <>
-                        <td className="px-4 py-2 text-right font-mono">{r.distanceKm}</td>
-                        <td className="px-4 py-2 text-right font-mono">{r.durationMin}</td>
-                      </>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-              {results.filter((r) => !r.error).length > 1 && (
-                <tfoot>
-                  <tr className="bg-muted/50 font-medium">
-                    <td className="px-4 py-2">Total</td>
-                    <td className="px-4 py-2 text-right font-mono">
-                      {Math.round(results.filter((r) => !r.error).reduce((s, r) => s + r.distanceKm, 0) * 10) / 10}
-                    </td>
-                    <td className="px-4 py-2 text-right font-mono">
-                      {results.filter((r) => !r.error).reduce((s, r) => s + r.durationMin, 0)}
-                    </td>
-                  </tr>
-                </tfoot>
-              )}
-            </table>
-          </div>
-        </div>
-      )}
+      {results && <DriveResultsTable results={results} />}
 
       {pickerTarget !== null && activeSlot && (
         <DestinationPicker
