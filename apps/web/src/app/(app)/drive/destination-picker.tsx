@@ -74,21 +74,21 @@ export function DestinationPicker({
         <DialogHeader><DialogTitle>Where to?</DialogTitle></DialogHeader>
 
         <div className="flex-1 overflow-y-auto -mx-6 px-6 space-y-1">
-          {homeLocations.length > 0 && (
-            <>
-              <div className="pt-1 pb-0.5">
-                <p className="text-xs font-medium text-muted-foreground px-3 py-1">Passenger homes</p>
-              </div>
-              {homeLocations.map((loc) => <LocationRow key={loc.id} loc={loc} />)}
-            </>
-          )}
-
           {otherLocations.length > 0 && (
             <>
               <div className="pt-1 pb-0.5">
                 <p className="text-xs font-medium text-muted-foreground px-3 py-1">Saved locations</p>
               </div>
               {otherLocations.map((loc) => <LocationRow key={loc.id} loc={loc} />)}
+            </>
+          )}
+
+          {homeLocations.length > 0 && (
+            <>
+              <div className="pt-1 pb-0.5">
+                <p className="text-xs font-medium text-muted-foreground px-3 py-1">Passenger homes</p>
+              </div>
+              {homeLocations.map((loc) => <LocationRow key={loc.id} loc={loc} />)}
             </>
           )}
 
