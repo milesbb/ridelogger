@@ -1,20 +1,20 @@
 export interface Coords {
-  lat: number
-  lon: number
+  lat: number;
+  lon: number;
 }
 
 export interface RouteResult {
-  distanceKm: number
-  durationMin: number
+  distanceKm: number;
+  durationMin: number;
 }
 
 export interface RoutingService {
-  geocode(address: string): Promise<Coords>
-  getRoute(from: Coords, to: Coords): Promise<RouteResult>
+  geocode(address: string): Promise<Coords>;
+  getRoute(from: Coords, to: Coords): Promise<RouteResult>;
 }
 
 export interface Logger {
-  info(message: string, meta: Record<string, unknown>): void
+  info(message: string, meta: Record<string, unknown>): void;
 }
 
 export class RoutingError extends Error {
@@ -22,7 +22,8 @@ export class RoutingError extends Error {
     message: string,
     public readonly status?: number,
   ) {
-    super(message)
-    this.name = "RoutingError"
+    super(message);
+    this.name = "RoutingError";
   }
 }
+// Test
