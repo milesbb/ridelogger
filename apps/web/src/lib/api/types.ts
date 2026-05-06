@@ -37,6 +37,7 @@ export interface DriveLegInput {
   fromLocationId: string
   toLocationId: string
   label: string
+  passengerLeg?: boolean
 }
 
 export interface DriveLegResult {
@@ -44,4 +45,5 @@ export interface DriveLegResult {
   distanceKm: number
   durationMin: number
   error?: string
+  passengerLeg?: boolean
 }

@@ -33,6 +33,7 @@ function buildLegs(slots: PassengerSlot[], homeLocationId: string): DriveLegInpu
     fromLocationId: homeLocationId,
     toLocationId: slots[0].pickupLocationId,
     label: `Home → ${slots[0].pickupLocationName}`,
+    passengerLeg: false,
   })
 
   for (let i = 0; i < slots.length; i++) {
@@ -41,17 +42,20 @@ function buildLegs(slots: PassengerSlot[], homeLocationId: string): DriveLegInpu
       fromLocationId: slot.pickupLocationId,
       toLocationId: slot.dropoffLocationId!,
       label: `${slot.passenger.name}: pick-up → drop-off`,
+      passengerLeg: true,
     })
     legs.push({
       fromLocationId: slot.dropoffLocationId!,
       toLocationId: slot.pickupLocationId,
       label: `${slot.passenger.name}: drop-off → pick-up`,
+      passengerLeg: false,
     })
     if (i < slots.length - 1) {
       legs.push({
         fromLocationId: slot.pickupLocationId,
         toLocationId: slots[i + 1].pickupLocationId,
         label: `${slot.pickupLocationName} → ${slots[i + 1].pickupLocationName}`,
+        passengerLeg: false,
       })
     }
   }
@@ -61,6 +65,7 @@ function buildLegs(slots: PassengerSlot[], homeLocationId: string): DriveLegInpu
     fromLocationId: last.pickupLocationId,
     toLocationId: homeLocationId,
     label: `${last.pickupLocationName} → Home`,
+    passengerLeg: false,
   })
 
   return legs
@@ -128,7 +133,7 @@ export function DrivePlanner({ passengers, locations, settings, onLocationsChang
     try {
       const legs = buildLegs(slots, settings.home_location_id)
       const res = await api.drive.calculate(legs)
-      setResults(res)
+      setResults(res.map((r, i) => ({ ...r, passengerLeg: legs[i]?.passengerLeg ?? false })))
     } catch (err) {
       setCalcError(err instanceof Error ? err.message : "Calculation failed")
     } finally {

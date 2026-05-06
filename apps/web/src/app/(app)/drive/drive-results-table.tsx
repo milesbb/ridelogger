@@ -1,6 +1,10 @@
+"use client"
+
+import { useState } from "react"
 import { ExportButtons } from "@/components/export-buttons"
 import type { DriveLegResult } from "@/lib/api/types"
 import type { ExportColumn, ExportRow } from "@/lib/export-utils"
+import { filterByPassengerLeg } from "@/lib/drive-utils"
 
 interface Props {
   results: DriveLegResult[]
@@ -30,7 +34,10 @@ function buildExportRows(results: DriveLegResult[]): ExportRow[] {
 }
 
 export function DriveResultsTable({ results }: Props) {
-  const successful = results.filter((r) => !r.error)
+  const [showNonPassenger, setShowNonPassenger] = useState(true)
+
+  const visibleResults = filterByPassengerLeg(results, showNonPassenger)
+  const successful = visibleResults.filter((r) => !r.error)
 
   return (
     <div className="space-y-3">
@@ -39,10 +46,19 @@ export function DriveResultsTable({ results }: Props) {
         <ExportButtons
           filename="drive-day-results"
           columns={COLUMNS}
-          rows={buildExportRows(results)}
+          rows={buildExportRows(visibleResults)}
           title="Drive Day Results"
         />
       </div>
+      <label className="flex items-center gap-2 text-sm cursor-pointer select-none w-fit">
+        <input
+          type="checkbox"
+          checked={showNonPassenger}
+          onChange={(e) => setShowNonPassenger(e.target.checked)}
+          className="h-4 w-4 rounded border-gray-300 accent-primary cursor-pointer"
+        />
+        Include non-passenger drives
+      </label>
       <div className="border rounded-lg overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -53,7 +69,7 @@ export function DriveResultsTable({ results }: Props) {
             </tr>
           </thead>
           <tbody>
-            {results.map((r, i) => (
+            {visibleResults.map((r, i) => (
               <tr key={i} className="border-b last:border-0">
                 <td className="px-4 py-2 text-muted-foreground">{r.label}</td>
                 {r.error ? (

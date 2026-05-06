@@ -1,3 +1,10 @@
+import type { DriveLegResult } from "@/lib/api/types"
+
+export function filterByPassengerLeg(results: DriveLegResult[], includeNonPassenger: boolean): DriveLegResult[] {
+  if (includeNonPassenger) return results
+  return results.filter((r) => r.passengerLeg !== false)
+}
+
 export interface OneWayRoute {
   distanceKm: number
   durationMin: number
