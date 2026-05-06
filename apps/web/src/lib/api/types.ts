@@ -47,3 +47,53 @@ export interface DriveLegResult {
   error?: string
   passengerLeg?: boolean
 }
+
+export interface SaveLegInput {
+  fromLocationId: string
+  toLocationId: string
+  passengerId: string | null
+  label: string
+  distanceKm: number
+  durationMin: number
+  isPassengerLeg: boolean
+}
+
+export interface SaveDriveDayInput {
+  date: string
+  startTime: string | null
+  legs: SaveLegInput[]
+}
+
+export interface DriveDaySummary {
+  id: string
+  user_id: string
+  date: string
+  start_time: string | null
+  passenger_names: string[]
+  total_km: number
+  total_min: number
+  passenger_km: number
+  passenger_min: number
+  created_at: string
+  updated_at: string
+}
+
+export interface SavedLeg {
+  id: string
+  drive_day_id: string
+  user_id: string
+  from_location_id: string
+  to_location_id: string
+  passenger_id: string | null
+  label: string
+  distance_km: number
+  duration_min: number
+  is_passenger_leg: boolean
+  position: number
+  created_at: string
+  updated_at: string
+}
+
+export interface DriveDayDetail extends DriveDaySummary {
+  legs: SavedLeg[]
+}

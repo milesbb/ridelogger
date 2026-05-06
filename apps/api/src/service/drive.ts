@@ -1,7 +1,9 @@
 import { createRoutingService, type Coords } from "@ridelogger/routing"
 import { getLocation } from "../data/locations"
+import * as db from "../data/drive_days"
 import logger from "../utils/logging"
 import { getRoutingApiKey, getRoutingProvider } from "../utils/routingKey"
+import { Errors } from "../utils/errorTypes"
 
 export interface DriveLegInput {
   fromLocationId: string
@@ -14,6 +16,22 @@ export interface DriveLegResult {
   distanceKm: number
   durationMin: number
   error?: string
+}
+
+export interface SaveLegInput {
+  fromLocationId: string
+  toLocationId: string
+  passengerId: string | null
+  label: string
+  distanceKm: number
+  durationMin: number
+  isPassengerLeg: boolean
+}
+
+export interface SaveDriveDayInput {
+  date: string
+  startTime: string | null
+  legs: SaveLegInput[]
 }
 
 export async function calculateDriveDay(
@@ -52,4 +70,41 @@ export async function calculateDriveDay(
       }
     }),
   )
+}
+
+export async function saveDriveDay(
+  userId: string,
+  input: SaveDriveDayInput,
+): Promise<{ id: string }> {
+  const day = await db.createDriveDay(userId, { date: input.date, startTime: input.startTime })
+  await db.createLegs(
+    input.legs.map((leg, i) => ({
+      drive_day_id: day.id,
+      user_id: userId,
+      from_location_id: leg.fromLocationId,
+      to_location_id: leg.toLocationId,
+      passenger_id: leg.passengerId,
+      label: leg.label,
+      distance_km: leg.distanceKm,
+      duration_min: leg.durationMin,
+      is_passenger_leg: leg.isPassengerLeg,
+      position: i,
+    })),
+  )
+  return { id: day.id }
+}
+
+export async function listDriveDays(userId: string): Promise<db.DriveDaySummary[]> {
+  return db.listDriveDays(userId)
+}
+
+export async function getDriveDay(id: string, userId: string): Promise<db.DriveDayDetail> {
+  const day = await db.getDriveDayWithLegs(id, userId)
+  if (!day) throw Errors.NotFound("Drive day")
+  return day
+}
+
+export async function deleteDriveDay(id: string, userId: string): Promise<void> {
+  const deleted = await db.deleteDriveDay(id, userId)
+  if (!deleted) throw Errors.NotFound("Drive day")
 }

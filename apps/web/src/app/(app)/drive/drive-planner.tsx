@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { DestinationPicker } from "./destination-picker"
 import { api } from "@/lib/api/client"
 import { DriveResultsTable } from "./drive-results-table"
-import type { Passenger, Location, AppSettings, DriveLegInput, DriveLegResult } from "@/lib/api/types"
+import type { Passenger, Location, AppSettings, DriveLegInput, DriveLegResult, SaveLegInput } from "@/lib/api/types"
 
 interface Props {
   passengers: Passenger[]
@@ -71,10 +71,149 @@ function buildLegs(slots: PassengerSlot[], homeLocationId: string): DriveLegInpu
   return legs
 }
 
+function buildSaveLegs(
+  slots: PassengerSlot[],
+  homeLocationId: string,
+  results: DriveLegResult[],
+): SaveLegInput[] {
+  const saveLegs: SaveLegInput[] = []
+  if (slots.length === 0) return saveLegs
+
+  let ri = 0
+
+  saveLegs.push({
+    fromLocationId: homeLocationId,
+    toLocationId: slots[0].pickupLocationId,
+    passengerId: null,
+    label: `Home → ${slots[0].pickupLocationName}`,
+    distanceKm: results[ri]?.distanceKm ?? 0,
+    durationMin: results[ri]?.durationMin ?? 0,
+    isPassengerLeg: false,
+  })
+  ri++
+
+  for (let i = 0; i < slots.length; i++) {
+    const slot = slots[i]
+    saveLegs.push({
+      fromLocationId: slot.pickupLocationId,
+      toLocationId: slot.dropoffLocationId!,
+      passengerId: slot.passenger.id,
+      label: `${slot.passenger.name}: pick-up → drop-off`,
+      distanceKm: results[ri]?.distanceKm ?? 0,
+      durationMin: results[ri]?.durationMin ?? 0,
+      isPassengerLeg: true,
+    })
+    ri++
+    saveLegs.push({
+      fromLocationId: slot.dropoffLocationId!,
+      toLocationId: slot.pickupLocationId,
+      passengerId: null,
+      label: `${slot.passenger.name}: drop-off → pick-up`,
+      distanceKm: results[ri]?.distanceKm ?? 0,
+      durationMin: results[ri]?.durationMin ?? 0,
+      isPassengerLeg: false,
+    })
+    ri++
+    if (i < slots.length - 1) {
+      saveLegs.push({
+        fromLocationId: slot.pickupLocationId,
+        toLocationId: slots[i + 1].pickupLocationId,
+        passengerId: null,
+        label: `${slot.pickupLocationName} → ${slots[i + 1].pickupLocationName}`,
+        distanceKm: results[ri]?.distanceKm ?? 0,
+        durationMin: results[ri]?.durationMin ?? 0,
+        isPassengerLeg: false,
+      })
+      ri++
+    }
+  }
+
+  const last = slots[slots.length - 1]
+  saveLegs.push({
+    fromLocationId: last.pickupLocationId,
+    toLocationId: homeLocationId,
+    passengerId: null,
+    label: `${last.pickupLocationName} → Home`,
+    distanceKm: results[ri]?.distanceKm ?? 0,
+    durationMin: results[ri]?.durationMin ?? 0,
+    isPassengerLeg: false,
+  })
+
+  return saveLegs
+}
+
+function todayLocal(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+}
+
+interface SaveSectionProps {
+  legsForSave: SaveLegInput[]
+  onSaved: () => void
+}
+
+function SaveSection({ legsForSave, onSaved }: SaveSectionProps) {
+  const [date, setDate] = useState(todayLocal)
+  const [startTime, setStartTime] = useState("")
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState("")
+  const [saved, setSaved] = useState(false)
+
+  async function handleSave() {
+    setSaving(true)
+    setSaveError("")
+    try {
+      await api.drive.save({ date, startTime: startTime || null, legs: legsForSave })
+      setSaved(true)
+      setTimeout(onSaved, 800)
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Save failed")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (saved) {
+    return <p className="text-sm text-center text-muted-foreground">Drive day saved.</p>
+  }
+
+  return (
+    <div className="border rounded-lg p-4 space-y-3">
+      <p className="text-sm font-medium">Save drive day</p>
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex-1 space-y-1">
+          <label className="text-xs text-muted-foreground">Date</label>
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="w-full border rounded-md px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+        <div className="flex-1 space-y-1">
+          <label className="text-xs text-muted-foreground">Start time (optional)</label>
+          <input
+            type="time"
+            value={startTime}
+            onChange={(e) => setStartTime(e.target.value)}
+            placeholder="Optional"
+            className="w-full border rounded-md px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+      </div>
+      {saveError && <p className="text-sm text-destructive">{saveError}</p>}
+      <Button onClick={handleSave} disabled={saving || !date} className="w-full sm:w-auto">
+        {saving ? "Saving…" : "Save drive day"}
+      </Button>
+    </div>
+  )
+}
+
 export function DrivePlanner({ passengers, locations, settings, onLocationsChange }: Props) {
   const [slots, setSlots] = useState<PassengerSlot[]>([])
   const [pickerTarget, setPickerTarget] = useState<PickerTarget | null>(null)
   const [results, setResults] = useState<DriveLegResult[] | null>(null)
+  const [legsForSave, setLegsForSave] = useState<SaveLegInput[] | null>(null)
   const [calculating, setCalculating] = useState(false)
   const [calcError, setCalcError] = useState("")
 
@@ -86,6 +225,7 @@ export function DrivePlanner({ passengers, locations, settings, onLocationsChang
   function addPassenger(p: Passenger) {
     const homeLocation = locations.find((l) => l.id === p.home_location_id)
     setResults(null)
+    setLegsForSave(null)
     setSlots((prev) => [
       ...prev,
       {
@@ -100,6 +240,7 @@ export function DrivePlanner({ passengers, locations, settings, onLocationsChang
 
   function removePassenger(id: string) {
     setResults(null)
+    setLegsForSave(null)
     setSlots((prev) => prev.filter((s) => s.passenger.id !== id))
   }
 
@@ -117,6 +258,7 @@ export function DrivePlanner({ passengers, locations, settings, onLocationsChang
     if (!pickerTarget) return
     const { slotIndex, field } = pickerTarget
     setResults(null)
+    setLegsForSave(null)
     setSlots((prev) =>
       prev.map((s, i) =>
         i !== slotIndex ? s :
@@ -133,12 +275,20 @@ export function DrivePlanner({ passengers, locations, settings, onLocationsChang
     try {
       const legs = buildLegs(slots, settings.home_location_id)
       const res = await api.drive.calculate(legs)
-      setResults(res.map((r, i) => ({ ...r, passengerLeg: legs[i]?.passengerLeg ?? false })))
+      const mapped = res.map((r, i) => ({ ...r, passengerLeg: legs[i]?.passengerLeg ?? false }))
+      setResults(mapped)
+      setLegsForSave(buildSaveLegs(slots, settings.home_location_id, mapped))
     } catch (err) {
       setCalcError(err instanceof Error ? err.message : "Calculation failed")
     } finally {
       setCalculating(false)
     }
+  }
+
+  function handleSaved() {
+    setResults(null)
+    setLegsForSave(null)
+    setSlots([])
   }
 
   const activeSlot = pickerTarget !== null ? slots[pickerTarget.slotIndex] : null
@@ -275,6 +425,10 @@ export function DrivePlanner({ passengers, locations, settings, onLocationsChang
       )}
 
       {results && <DriveResultsTable results={results} />}
+
+      {results && legsForSave && (
+        <SaveSection legsForSave={legsForSave} onSaved={handleSaved} />
+      )}
 
       {pickerTarget !== null && activeSlot && (
         <DestinationPicker

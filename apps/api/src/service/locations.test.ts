@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('../data/locations')
+vi.mock('../data/drive_days')
 vi.mock('./geocode')
 
 import * as db from '../data/locations'
+import * as driveDaysDb from '../data/drive_days'
 import * as geocode from './geocode'
 import { list, create, update, remove } from './locations'
 
@@ -71,14 +73,38 @@ describe('update', () => {
 
 describe('remove', () => {
   it('deletes the location', async () => {
+    vi.mocked(db.isLocationReferenced).mockResolvedValue(false)
+    vi.mocked(driveDaysDb.findDriveDaysByLocation).mockResolvedValue([])
     vi.mocked(db.deleteLocation).mockResolvedValue(true)
 
     await expect(remove('l-1', 'u-1')).resolves.toBeUndefined()
   })
 
   it('throws NotFound when location does not exist', async () => {
+    vi.mocked(db.isLocationReferenced).mockResolvedValue(false)
+    vi.mocked(driveDaysDb.findDriveDaysByLocation).mockResolvedValue([])
     vi.mocked(db.deleteLocation).mockResolvedValue(false)
 
     await expect(remove('l-1', 'u-1')).rejects.toMatchObject({ errorKey: 'NotFound' })
+  })
+
+  it('throws Conflict when location is used as a home address', async () => {
+    vi.mocked(db.isLocationReferenced).mockResolvedValue(true)
+    vi.mocked(driveDaysDb.findDriveDaysByLocation).mockResolvedValue([])
+
+    await expect(remove('l-1', 'u-1')).rejects.toMatchObject({ errorKey: 'Conflict' })
+  })
+
+  it('throws Conflict with drive day dates when location is used in legs', async () => {
+    vi.mocked(db.isLocationReferenced).mockResolvedValue(false)
+    vi.mocked(driveDaysDb.findDriveDaysByLocation).mockResolvedValue([
+      { id: 'dd-1', date: '2026-05-06' },
+      { id: 'dd-2', date: '2026-05-04' },
+    ])
+
+    await expect(remove('l-1', 'u-1')).rejects.toMatchObject({
+      errorKey: 'Conflict',
+      message: expect.stringContaining('drive day'),
+    })
   })
 })

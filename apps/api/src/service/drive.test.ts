@@ -1,11 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('../data/locations')
+vi.mock('../data/drive_days')
 vi.mock('@ridelogger/routing')
 
 import { getLocation } from '../data/locations'
+import * as driveDaysDb from '../data/drive_days'
 import { createRoutingService } from '@ridelogger/routing'
-import { calculateDriveDay } from './drive'
+import { calculateDriveDay, saveDriveDay, listDriveDays, getDriveDay, deleteDriveDay } from './drive'
 
 const mockHome = {
   id: 'loc-home',
@@ -128,5 +130,110 @@ describe('calculateDriveDay', () => {
     expect(results).toHaveLength(2)
     expect(results[0].label).toBe('Leg 1')
     expect(results[1].label).toBe('Leg 2')
+  })
+})
+
+const mockDriveDay = {
+  id: 'dd-1',
+  user_id: 'u-1',
+  date: '2026-05-06',
+  start_time: '09:00',
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+}
+
+const mockSummary = {
+  ...mockDriveDay,
+  passenger_names: ['John'],
+  total_km: 45.3,
+  total_min: 82,
+  passenger_km: 12.1,
+  passenger_min: 22,
+}
+
+const mockLeg = {
+  id: 'leg-1',
+  drive_day_id: 'dd-1',
+  user_id: 'u-1',
+  from_location_id: 'loc-home',
+  to_location_id: 'loc-dest',
+  passenger_id: 'p-1',
+  label: 'John: pick-up → drop-off',
+  distance_km: 12.1,
+  duration_min: 22,
+  is_passenger_leg: true,
+  position: 1,
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+}
+
+const saveLegInput = {
+  fromLocationId: 'loc-home',
+  toLocationId: 'loc-dest',
+  passengerId: 'p-1',
+  label: 'John: pick-up → drop-off',
+  distanceKm: 12.1,
+  durationMin: 22,
+  isPassengerLeg: true,
+}
+
+describe('saveDriveDay', () => {
+  it('creates a drive day and bulk inserts legs', async () => {
+    vi.mocked(driveDaysDb.createDriveDay).mockResolvedValue(mockDriveDay)
+    vi.mocked(driveDaysDb.createLegs).mockResolvedValue(undefined)
+
+    const result = await saveDriveDay('u-1', {
+      date: '2026-05-06',
+      startTime: '09:00',
+      legs: [saveLegInput],
+    })
+
+    expect(result).toEqual({ id: 'dd-1' })
+    expect(driveDaysDb.createDriveDay).toHaveBeenCalledWith('u-1', { date: '2026-05-06', startTime: '09:00' })
+    expect(driveDaysDb.createLegs).toHaveBeenCalledWith([
+      expect.objectContaining({
+        drive_day_id: 'dd-1',
+        user_id: 'u-1',
+        from_location_id: 'loc-home',
+        to_location_id: 'loc-dest',
+        passenger_id: 'p-1',
+        is_passenger_leg: true,
+        position: 0,
+      }),
+    ])
+  })
+})
+
+describe('listDriveDays', () => {
+  it('returns summaries from the data layer', async () => {
+    vi.mocked(driveDaysDb.listDriveDays).mockResolvedValue([mockSummary])
+    const result = await listDriveDays('u-1')
+    expect(result).toEqual([mockSummary])
+  })
+})
+
+describe('getDriveDay', () => {
+  it('returns the detail when found', async () => {
+    const detail = { ...mockSummary, legs: [mockLeg] }
+    vi.mocked(driveDaysDb.getDriveDayWithLegs).mockResolvedValue(detail)
+    const result = await getDriveDay('dd-1', 'u-1')
+    expect(result).toEqual(detail)
+  })
+
+  it('throws NotFound when drive day does not exist', async () => {
+    vi.mocked(driveDaysDb.getDriveDayWithLegs).mockResolvedValue(null)
+    await expect(getDriveDay('missing', 'u-1')).rejects.toMatchObject({ httpStatus: 404 })
+  })
+})
+
+describe('deleteDriveDay', () => {
+  it('resolves when the drive day is deleted', async () => {
+    vi.mocked(driveDaysDb.deleteDriveDay).mockResolvedValue(true)
+    await expect(deleteDriveDay('dd-1', 'u-1')).resolves.toBeUndefined()
+  })
+
+  it('throws NotFound when the drive day does not exist', async () => {
+    vi.mocked(driveDaysDb.deleteDriveDay).mockResolvedValue(false)
+    await expect(deleteDriveDay('missing', 'u-1')).rejects.toMatchObject({ httpStatus: 404 })
   })
 })
