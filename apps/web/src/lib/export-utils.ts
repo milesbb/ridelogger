@@ -51,13 +51,17 @@ export async function exportToPdf(
   })
 
   autoTable(doc, {
-    head: [columns.map((c) => c.header)],
-    body: rows.map((row) => columns.map((c) => String(row[c.accessor] ?? ""))),
+    head: [columns.map((c) => pdfSafe(c.header))],
+    body: rows.map((row) => columns.map((c) => pdfSafe(String(row[c.accessor] ?? "")))),
     startY,
     columnStyles,
   })
 
   doc.save(`${filename}.pdf`)
+}
+
+function pdfSafe(value: string): string {
+  return value.replace(/→/g, "->").replace(/←/g, "<-")
 }
 
 function csvEscape(value: string): string {
