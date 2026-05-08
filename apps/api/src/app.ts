@@ -1,3 +1,4 @@
+// Entry point for the Express app (wrapped by lambda.ts for production)
 import express, { Request, Response, NextFunction } from "express"
 import cors from "cors"
 import cookieParser from "cookie-parser"
