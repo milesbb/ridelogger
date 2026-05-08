@@ -16,11 +16,12 @@ interface Props {
   selected: string | null
   onSelect: (locationId: string, locationName: string) => void
   onLocationAdded: (location: Location) => void
+  suggestedLocations?: Location[]
 }
 
 export function DestinationPicker({
   open, onClose, locations, passengerHomeLocationIds,
-  selected, onSelect, onLocationAdded,
+  selected, onSelect, onLocationAdded, suggestedLocations = [],
 }: Props) {
   const [showAddForm, setShowAddForm] = useState(false)
   const [newName, setNewName] = useState("")
@@ -74,6 +75,15 @@ export function DestinationPicker({
         <DialogHeader><DialogTitle>Where to?</DialogTitle></DialogHeader>
 
         <div className="flex-1 overflow-y-auto -mx-6 px-6 space-y-1">
+          {suggestedLocations.length > 0 && (
+            <>
+              <div className="pt-1 pb-0.5">
+                <p className="text-xs font-medium text-muted-foreground px-3 py-1">Previously used</p>
+              </div>
+              {suggestedLocations.map((loc) => <LocationRow key={loc.id} loc={loc} />)}
+            </>
+          )}
+
           {otherLocations.length > 0 && (
             <>
               <div className="pt-1 pb-0.5">

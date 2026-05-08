@@ -267,6 +267,7 @@ export function DrivePlanner({ passengers, locations, settings, onLocationsChang
   const [date, setDate] = useState(todayLocal)
   const [slots, setSlots] = useState<PassengerSlot[]>([])
   const [pickerTarget, setPickerTarget] = useState<PickerTarget | null>(null)
+  const [dropoffSuggestions, setDropoffSuggestions] = useState<Location[]>([])
   const [results, setResults] = useState<DriveLegResult[] | null>(null)
   const [legsForSave, setLegsForSave] = useState<SaveLegInput[] | null>(null)
   const [calculating, setCalculating] = useState(false)
@@ -279,6 +280,20 @@ export function DrivePlanner({ passengers, locations, settings, onLocationsChang
     const populated = buildSlotsFromDetail(initialDayDetail, passengers, locations)
     if (populated.length > 0) setSlots(populated)
   }, [initialDayDetail, passengers, locations])
+
+  useEffect(() => {
+    if (pickerTarget?.field !== "dropoff") {
+      setDropoffSuggestions([])
+      return
+    }
+    const passenger = slots[pickerTarget.slotIndex]?.passenger
+    if (!passenger) return
+    let cancelled = false
+    api.drive.getPassengerDropoffs(passenger.id)
+      .then((locs) => { if (!cancelled) setDropoffSuggestions(locs) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [pickerTarget, slots])
 
   const selectedIds = new Set(slots.map((s) => s.passenger.id))
   const unselectedPassengers = passengers.filter((p) => !selectedIds.has(p.id))
@@ -554,6 +569,7 @@ export function DrivePlanner({ passengers, locations, settings, onLocationsChang
           }
           onSelect={setPickerSelection}
           onLocationAdded={(loc) => onLocationsChange([...locations, loc])}
+          suggestedLocations={pickerTarget.field === "dropoff" ? dropoffSuggestions : []}
         />
       )}
     </div>
