@@ -16,11 +16,18 @@ const COLUMNS: ExportColumn[] = [
   { header: "min", accessor: "durationMin", align: "right" },
 ]
 
-function buildExportRows(results: DriveLegResult[]): ExportRow[] {
+function legLabel(r: DriveLegResult, showLocationNames: boolean): string {
+  if (showLocationNames && r.fromLocationName && r.toLocationName) {
+    return `${r.label} (${r.fromLocationName} → ${r.toLocationName})`
+  }
+  return r.label
+}
+
+function buildExportRows(results: DriveLegResult[], showLocationNames: boolean): ExportRow[] {
   const rows: ExportRow[] = results.map((r) =>
     r.error
-      ? { label: r.label, distanceKm: "Error", durationMin: r.error }
-      : { label: r.label, distanceKm: r.distanceKm, durationMin: r.durationMin },
+      ? { label: legLabel(r, showLocationNames), distanceKm: "Error", durationMin: r.error }
+      : { label: legLabel(r, showLocationNames), distanceKm: r.distanceKm, durationMin: r.durationMin },
   )
   const successful = results.filter((r) => !r.error)
   if (successful.length > 1) {
@@ -35,6 +42,7 @@ function buildExportRows(results: DriveLegResult[]): ExportRow[] {
 
 export function DriveResultsTable({ results }: Props) {
   const [showNonPassenger, setShowNonPassenger] = useState(true)
+  const [showLocationNames, setShowLocationNames] = useState(true)
 
   const visibleResults = filterByPassengerLeg(results, showNonPassenger)
   const successful = visibleResults.filter((r) => !r.error)
@@ -46,19 +54,30 @@ export function DriveResultsTable({ results }: Props) {
         <ExportButtons
           filename="drive-day-results"
           columns={COLUMNS}
-          rows={buildExportRows(visibleResults)}
+          rows={buildExportRows(visibleResults, showLocationNames)}
           title="Drive Day Results"
         />
       </div>
-      <label className="flex items-center gap-2 text-sm cursor-pointer select-none w-fit">
-        <input
-          type="checkbox"
-          checked={showNonPassenger}
-          onChange={(e) => setShowNonPassenger(e.target.checked)}
-          className="h-4 w-4 rounded border-gray-300 accent-primary cursor-pointer"
-        />
-        Include non-passenger drives
-      </label>
+      <div className="flex flex-col gap-1.5">
+        <label className="flex items-center gap-2 text-sm cursor-pointer select-none w-fit">
+          <input
+            type="checkbox"
+            checked={showNonPassenger}
+            onChange={(e) => setShowNonPassenger(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 accent-primary cursor-pointer"
+          />
+          Include non-passenger drives
+        </label>
+        <label className="flex items-center gap-2 text-sm cursor-pointer select-none w-fit">
+          <input
+            type="checkbox"
+            checked={showLocationNames}
+            onChange={(e) => setShowLocationNames(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 accent-primary cursor-pointer"
+          />
+          Show location names
+        </label>
+      </div>
       <div className="border rounded-lg overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -71,7 +90,7 @@ export function DriveResultsTable({ results }: Props) {
           <tbody>
             {visibleResults.map((r, i) => (
               <tr key={i} className="border-b last:border-0">
-                <td className="px-4 py-2 text-muted-foreground">{r.label}</td>
+                <td className="px-4 py-2 text-muted-foreground">{legLabel(r, showLocationNames)}</td>
                 {r.error ? (
                   <td colSpan={2} className="px-4 py-2 text-destructive text-xs">{r.error}</td>
                 ) : (

@@ -345,7 +345,12 @@ export function DrivePlanner({ passengers, locations, settings, onLocationsChang
     try {
       const legs = buildLegs(slots, settings.home_location_id)
       const res = await api.drive.calculate(legs)
-      const mapped = res.map((r, i) => ({ ...r, passengerLeg: legs[i]?.passengerLeg ?? false }))
+      const mapped = res.map((r, i) => ({
+        ...r,
+        passengerLeg: legs[i]?.passengerLeg ?? false,
+        fromLocationName: locations.find((l) => l.id === legs[i]?.fromLocationId)?.name,
+        toLocationName: locations.find((l) => l.id === legs[i]?.toLocationId)?.name,
+      }))
       setResults(mapped)
       setLegsForSave(buildSaveLegs(slots, settings.home_location_id, mapped))
     } catch (err) {
