@@ -476,10 +476,10 @@ export function DrivePlanner({ passengers, locations, settings, onLocationsChang
               <div key={slot.passenger.id} className="border rounded-lg overflow-hidden">
                 <div className="flex items-center gap-2 px-4 py-2 bg-muted/30 border-b">
                   <div className="flex flex-col gap-0.5 shrink-0">
-                    <button type="button" onClick={() => moveSlot(i, -1)} disabled={i === 0} className="text-muted-foreground disabled:opacity-20 hover:text-foreground">
+                    <button type="button" aria-label="Move up" onClick={() => moveSlot(i, -1)} disabled={i === 0} className="text-muted-foreground disabled:opacity-20 hover:text-foreground">
                       <ChevronUp className="h-4 w-4" />
                     </button>
-                    <button type="button" onClick={() => moveSlot(i, 1)} disabled={i === slots.length - 1} className="text-muted-foreground disabled:opacity-20 hover:text-foreground">
+                    <button type="button" aria-label="Move down" onClick={() => moveSlot(i, 1)} disabled={i === slots.length - 1} className="text-muted-foreground disabled:opacity-20 hover:text-foreground">
                       <ChevronDown className="h-4 w-4" />
                     </button>
                   </div>

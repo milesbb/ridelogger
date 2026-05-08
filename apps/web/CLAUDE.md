@@ -56,6 +56,10 @@ All addresses in this app are stored as `locations` rows on the API. Any form or
 
 ## Tests
 
-- **Update and add tests for any change to pure utility functions** in `lib/` (e.g. `drive-utils.ts`). A change to a utility with no corresponding test change is incomplete.
-- Do not test React components or pages — test the logic they depend on (utilities, pure functions).
-- Run `vitest` from `apps/web` to verify.
+- **After any change to a component or utility, update or add tests.** A change with no test update is incomplete unless it is purely cosmetic.
+- Use Vitest + React Testing Library for all tests. Run `npm test` from `apps/web` to verify.
+- **Components:** mock `@/lib/api/client` with `vi.mock`, render with `render()`, interact with `fireEvent`/`userEvent`, assert with `screen` queries. Follow the patterns in `passenger-form.test.tsx` and `drive-planner.test.tsx`.
+- **Utilities:** plain Vitest unit tests — no rendering needed. Follow `drive-utils.test.ts`.
+- Mock at the component boundary: mock `api.*` calls and `next/navigation`, not internal component state.
+- Test user-facing behaviour: what renders, what API calls are triggered, what callbacks fire. Not internal state changes.
+- Place test files next to the file they test (e.g. `passenger-form.tsx` → `passenger-form.test.tsx`).

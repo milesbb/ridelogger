@@ -137,4 +137,5 @@ lib/           drive-utils.ts and other pure utilities
 - Mock at the boundary of the layer under test. Service tests mock the data layer. Controller tests mock the service layer.
 - No mocking of internal implementation details.
 - Test behaviour, not implementation. Assert on what a function returns or what side effects it causes, not how it does it internally.
-- **After any change to logic in any package — API service/data, web utilities, or routing — update the relevant tests and add new tests for new behaviour.** A change with no test update is incomplete unless the change is purely cosmetic (renaming, reformatting) or only touches configuration.
+- **After any change to API service or data logic, update the relevant tests and add new tests for new behaviour.** A change with no test update is incomplete unless the change is purely cosmetic (renaming, reformatting) or only touches configuration.
+- **After any change to a web component or utility, update or add the relevant RTL/Vitest tests.** See `apps/web/CLAUDE.md` for the web-specific testing rules.
