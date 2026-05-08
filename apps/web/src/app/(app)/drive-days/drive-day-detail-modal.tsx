@@ -177,7 +177,7 @@ export function DriveDayDetailModal({ summary, onClose, onDeleted }: Props) {
                 onClick={() => router.push(`/drive?from=${summary.id}`)}
               >
                 <CalendarDays className="h-4 w-4 mr-1.5" />
-                Plan this drive day
+                Repeat this drive day
               </Button>
               {!confirmDelete ? (
                 <Button
