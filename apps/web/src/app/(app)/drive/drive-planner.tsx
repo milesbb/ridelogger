@@ -419,7 +419,7 @@ export function DrivePlanner({ passengers, locations, settings, onLocationsChang
             variant="outline"
             size="sm"
             onClick={() => setQuickAddOpen(true)}
-            className="text-xs h-7 px-2"
+            className="text-xs min-h-[44px] px-2"
           >
             <UserPlus className="h-3.5 w-3.5 mr-1" />
             New passenger

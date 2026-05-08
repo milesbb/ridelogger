@@ -37,10 +37,30 @@ jobs:
       - run: npm ci
       - run: npx turbo run test --filter=@ridelogger/web
 
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('**/package-lock.json') }}
+      - run: npx playwright install chromium
+      - run: npm run test:e2e --workspace=apps/web
+        env:
+          CI: true
+
   deploy:
     name: Deploy Web to Vercel
     runs-on: ubuntu-latest
-    needs: [lint, test]
+    needs: [lint, test, e2e]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
