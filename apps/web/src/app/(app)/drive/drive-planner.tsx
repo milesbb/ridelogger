@@ -4,16 +4,17 @@ import { useState, useRef, useEffect } from "react"
 import { ChevronDown, ChevronUp, MapPin, Home, Pencil } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DestinationPicker } from "./destination-picker"
-import { PreviousDrives } from "./previous-drives"
+import { PreviousDrives, buildSlotsFromDetail } from "./previous-drives"
 import { api } from "@/lib/api/client"
 import { DriveResultsTable } from "./drive-results-table"
-import type { Passenger, Location, AppSettings, DriveLegInput, DriveLegResult, SaveLegInput } from "@/lib/api/types"
+import type { Passenger, Location, AppSettings, DriveLegInput, DriveLegResult, SaveLegInput, DriveDayDetail } from "@/lib/api/types"
 
 interface Props {
   passengers: Passenger[]
   locations: Location[]
   settings: AppSettings
   onLocationsChange: (locations: Location[]) => void
+  initialDayDetail?: DriveDayDetail
 }
 
 export interface PassengerSlot {
@@ -259,7 +260,7 @@ function SaveSection({ date, legsForSave, onSaved }: SaveSectionProps) {
   )
 }
 
-export function DrivePlanner({ passengers, locations, settings, onLocationsChange }: Props) {
+export function DrivePlanner({ passengers, locations, settings, onLocationsChange, initialDayDetail }: Props) {
   const [date, setDate] = useState(todayLocal)
   const [slots, setSlots] = useState<PassengerSlot[]>([])
   const [pickerTarget, setPickerTarget] = useState<PickerTarget | null>(null)
@@ -267,6 +268,12 @@ export function DrivePlanner({ passengers, locations, settings, onLocationsChang
   const [legsForSave, setLegsForSave] = useState<SaveLegInput[] | null>(null)
   const [calculating, setCalculating] = useState(false)
   const [calcError, setCalcError] = useState("")
+
+  useEffect(() => {
+    if (!initialDayDetail || passengers.length === 0 || locations.length === 0) return
+    const populated = buildSlotsFromDetail(initialDayDetail, passengers, locations)
+    if (populated.length > 0) setSlots(populated)
+  }, [initialDayDetail, passengers, locations])
 
   const selectedIds = new Set(slots.map((s) => s.passenger.id))
   const unselectedPassengers = passengers.filter((p) => !selectedIds.has(p.id))

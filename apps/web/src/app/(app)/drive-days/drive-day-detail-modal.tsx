@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Trash2 } from "lucide-react"
+import { Trash2, CalendarDays } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { ExportButtons } from "@/components/export-buttons"
@@ -66,6 +67,7 @@ function legToResult(leg: SavedLeg) {
 }
 
 export function DriveDayDetailModal({ summary, onClose, onDeleted }: Props) {
+  const router = useRouter()
   const [detail, setDetail] = useState<DriveDayDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState("")
@@ -168,7 +170,15 @@ export function DriveDayDetailModal({ summary, onClose, onDeleted }: Props) {
               </table>
             </div>
 
-            <div className="pt-2 border-t">
+            <div className="pt-2 border-t space-y-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push(`/drive?from=${summary.id}`)}
+              >
+                <CalendarDays className="h-4 w-4 mr-1.5" />
+                Plan this drive day
+              </Button>
               {!confirmDelete ? (
                 <Button
                   variant="ghost"
