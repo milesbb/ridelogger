@@ -4,6 +4,8 @@ import { useEffect, useState } from "react"
 import { api } from "@/lib/api/client"
 import type { AppSettings } from "@/lib/api/types"
 import { SettingsForm } from "./settings-form"
+import { ChangePasswordForm } from "./change-password-form"
+import { DeleteAccountSection } from "./delete-account-section"
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<AppSettings | null>(null)
@@ -20,10 +22,14 @@ export default function SettingsPage() {
       <div>
         <h1 className="text-xl font-semibold">Settings</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Set your home address — used as the starting point for drive calculations.
+          Manage your home address, password, and account.
         </p>
       </div>
       <SettingsForm existing={settings} />
+      <hr className="border-border" />
+      <ChangePasswordForm />
+      <hr className="border-border" />
+      <DeleteAccountSection />
     </div>
   )
 }

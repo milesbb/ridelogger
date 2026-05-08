@@ -84,6 +84,13 @@ export const api = {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       }).catch(() => {}),
     refresh: tryRefresh,
+    changePassword: (currentPassword: string, newPassword: string) =>
+      apiFetch<void>("/v1/auth/change-password", {
+        method: "POST",
+        body: JSON.stringify({ currentPassword, newPassword }),
+      }),
+    deleteAccount: (password: string) =>
+      apiFetch<void>("/v1/auth/account", { method: "DELETE", body: JSON.stringify({ password }) }),
   },
   passengers: {
     list: () => apiFetch<Passenger[]>("/v1/passengers"),

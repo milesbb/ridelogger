@@ -3,9 +3,12 @@ import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
 import {
   getUserByEmailOrUsername,
+  getUserById,
   createUser,
   emailExists,
   usernameExists,
+  updateUserPassword,
+  deleteUser,
 } from '../data/users'
 import { storeRefreshToken, getActiveRefreshTokens, revokeAllUserTokens } from '../data/auth'
 import { getJWTSecret } from '../utils/aws/auth'
@@ -79,6 +82,34 @@ export async function refreshUserToken(rawToken: string, userId: string): Promis
 export async function logoutUser(userId: string): Promise<void> {
   await revokeAllUserTokens(userId)
   logger.info('user logout', { userId })
+}
+
+export async function changePassword(
+  userId: string,
+  currentPassword: string,
+  newPassword: string,
+): Promise<void> {
+  const user = await getUserById(userId)
+  if (!user) throw Errors.Unauthorized()
+
+  const valid = await bcrypt.compare(currentPassword, user.password_hash)
+  if (!valid) throw Errors.InvalidCredentials()
+
+  const newHash = await bcrypt.hash(newPassword, 12)
+  await updateUserPassword(userId, newHash)
+  await revokeAllUserTokens(userId)
+  logger.info('user changed password', { userId })
+}
+
+export async function deleteAccount(userId: string, password: string): Promise<void> {
+  const user = await getUserById(userId)
+  if (!user) throw Errors.Unauthorized()
+
+  const valid = await bcrypt.compare(password, user.password_hash)
+  if (!valid) throw Errors.InvalidCredentials()
+
+  await deleteUser(userId)
+  logger.info('user deleted account', { userId })
 }
 
 export async function registerUser(

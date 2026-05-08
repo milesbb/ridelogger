@@ -12,7 +12,7 @@ vi.mock('../middlewares/auth', () => ({
   AuthenticatedRequest: {},
 }))
 
-import { loginUser, registerUser, refreshUserToken, logoutUser } from '../service/auth'
+import { loginUser, registerUser, refreshUserToken, logoutUser, changePassword, deleteAccount } from '../service/auth'
 import authRouter from './auth'
 import { errorHandler } from '../middlewares/errorHandler'
 
@@ -121,6 +121,67 @@ describe('POST /refresh', () => {
 
   it('returns 401 when refresh cookies are missing', async () => {
     const res = await request.post('/refresh')
+    expect(res.status).toBe(401)
+  })
+})
+
+describe('POST /change-password', () => {
+  it('returns 204 on success', async () => {
+    vi.mocked(changePassword).mockResolvedValue()
+
+    const res = await request
+      .post('/change-password')
+      .send({ currentPassword: 'old', newPassword: 'new' })
+
+    expect(res.status).toBe(204)
+    expect(changePassword).toHaveBeenCalledWith('user-1', 'old', 'new')
+  })
+
+  it('returns 400 when currentPassword is missing', async () => {
+    const res = await request.post('/change-password').send({ newPassword: 'new' })
+    expect(res.status).toBe(400)
+  })
+
+  it('returns 400 when newPassword is missing', async () => {
+    const res = await request.post('/change-password').send({ currentPassword: 'old' })
+    expect(res.status).toBe(400)
+  })
+
+  it('returns 401 when current password is wrong', async () => {
+    vi.mocked(changePassword).mockRejectedValue(
+      Object.assign(new Error('Invalid email or password'), { httpStatus: 401, errorKey: 'InvalidCredentials' }),
+    )
+
+    const res = await request.post('/change-password').send({ currentPassword: 'wrong', newPassword: 'new' })
+    expect(res.status).toBe(401)
+  })
+})
+
+describe('DELETE /account', () => {
+  it('returns 204 and clears cookies on success', async () => {
+    vi.mocked(deleteAccount).mockResolvedValue()
+
+    const res = await request
+      .delete('/account')
+      .send({ password: 'secret' })
+
+    expect(res.status).toBe(204)
+    expect(deleteAccount).toHaveBeenCalledWith('user-1', 'secret')
+    const cookies = res.headers['set-cookie'] as unknown as string[]
+    expect(cookies.some((c: string) => c.includes('refreshToken=;'))).toBe(true)
+  })
+
+  it('returns 400 when password is missing', async () => {
+    const res = await request.delete('/account').send({})
+    expect(res.status).toBe(400)
+  })
+
+  it('returns 401 when password is wrong', async () => {
+    vi.mocked(deleteAccount).mockRejectedValue(
+      Object.assign(new Error('Invalid email or password'), { httpStatus: 401, errorKey: 'InvalidCredentials' }),
+    )
+
+    const res = await request.delete('/account').send({ password: 'wrong' })
     expect(res.status).toBe(401)
   })
 })

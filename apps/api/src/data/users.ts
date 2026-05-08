@@ -60,3 +60,15 @@ export async function usernameExists(username: string): Promise<boolean> {
   )
   return row !== null
 }
+
+export async function updateUserPassword(userId: string, newPasswordHash: string): Promise<User> {
+  const rows = await query<Record<string, unknown>>(
+    `UPDATE users SET password_hash=$1, updated_at=now() WHERE id=$2 RETURNING ${USER_COLS}`,
+    [newPasswordHash, userId],
+  )
+  return parseUser(rows[0])
+}
+
+export async function deleteUser(userId: string): Promise<void> {
+  await query('DELETE FROM users WHERE id=$1', [userId])
+}

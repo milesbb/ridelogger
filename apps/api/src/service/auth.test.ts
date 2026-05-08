@@ -9,7 +9,7 @@ import * as userData from '../data/users'
 import * as authData from '../data/auth'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-import { loginUser, registerUser, logoutUser, refreshUserToken, verifyAccessToken } from './auth'
+import { loginUser, registerUser, logoutUser, refreshUserToken, verifyAccessToken, changePassword, deleteAccount } from './auth'
 
 const mockUser = {
   id: 'user-1',
@@ -149,6 +149,61 @@ describe('refreshUserToken', () => {
     vi.mocked(authData.getActiveRefreshTokens).mockResolvedValue([])
 
     await expect(refreshUserToken('any', 'user-1')).rejects.toMatchObject({ errorKey: 'Unauthorized' })
+  })
+})
+
+describe('changePassword', () => {
+  it('hashes new password, updates it, and revokes all tokens on success', async () => {
+    vi.mocked(userData.getUserById).mockResolvedValue(mockUser)
+    vi.mocked(bcrypt.compare).mockResolvedValue(true as never)
+    vi.mocked(bcrypt.hash).mockResolvedValue('new-hashed-pass' as never)
+    vi.mocked(userData.updateUserPassword).mockResolvedValue({ ...mockUser, password_hash: 'new-hashed-pass' })
+    vi.mocked(authData.revokeAllUserTokens).mockResolvedValue()
+
+    await changePassword('user-1', 'current-pass', 'new-pass')
+
+    expect(userData.updateUserPassword).toHaveBeenCalledWith('user-1', 'new-hashed-pass')
+    expect(authData.revokeAllUserTokens).toHaveBeenCalledWith('user-1')
+  })
+
+  it('throws InvalidCredentials when current password is wrong', async () => {
+    vi.mocked(userData.getUserById).mockResolvedValue(mockUser)
+    vi.mocked(bcrypt.compare).mockResolvedValue(false as never)
+
+    await expect(changePassword('user-1', 'wrong', 'new')).rejects.toMatchObject({ errorKey: 'InvalidCredentials' })
+    expect(userData.updateUserPassword).not.toHaveBeenCalled()
+  })
+
+  it('throws Unauthorized when user not found', async () => {
+    vi.mocked(userData.getUserById).mockResolvedValue(null)
+
+    await expect(changePassword('missing', 'pass', 'new')).rejects.toMatchObject({ errorKey: 'Unauthorized' })
+  })
+})
+
+describe('deleteAccount', () => {
+  it('deletes the user when password is correct', async () => {
+    vi.mocked(userData.getUserById).mockResolvedValue(mockUser)
+    vi.mocked(bcrypt.compare).mockResolvedValue(true as never)
+    vi.mocked(userData.deleteUser).mockResolvedValue()
+
+    await deleteAccount('user-1', 'password')
+
+    expect(userData.deleteUser).toHaveBeenCalledWith('user-1')
+  })
+
+  it('throws InvalidCredentials when password is wrong', async () => {
+    vi.mocked(userData.getUserById).mockResolvedValue(mockUser)
+    vi.mocked(bcrypt.compare).mockResolvedValue(false as never)
+
+    await expect(deleteAccount('user-1', 'wrong')).rejects.toMatchObject({ errorKey: 'InvalidCredentials' })
+    expect(userData.deleteUser).not.toHaveBeenCalled()
+  })
+
+  it('throws Unauthorized when user not found', async () => {
+    vi.mocked(userData.getUserById).mockResolvedValue(null)
+
+    await expect(deleteAccount('missing', 'pass')).rejects.toMatchObject({ errorKey: 'Unauthorized' })
   })
 })
 

@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from "express"
-import { loginUser, refreshUserToken, logoutUser, registerUser } from "../service/auth"
+import { loginUser, refreshUserToken, logoutUser, registerUser, changePassword, deleteAccount } from "../service/auth"
 import { requireAuth, AuthenticatedRequest } from "../middlewares/auth"
 import { Errors } from "../utils/errorTypes"
 
@@ -55,6 +55,34 @@ router.post("/logout", requireAuth, async (req: Request, res: Response, next: Ne
   try {
     const userId = (req as AuthenticatedRequest).userId
     await logoutUser(userId)
+    res.clearCookie(COOKIE_NAME)
+    res.clearCookie(USER_ID_COOKIE)
+    res.status(204).send()
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.post("/change-password", requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req as AuthenticatedRequest).userId
+    const { currentPassword, newPassword } = req.body
+    if (!currentPassword || !newPassword) throw Errors.BadRequest("currentPassword and newPassword required")
+
+    await changePassword(userId, currentPassword, newPassword)
+    res.status(204).send()
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.delete("/account", requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req as AuthenticatedRequest).userId
+    const { password } = req.body
+    if (!password) throw Errors.BadRequest("password required")
+
+    await deleteAccount(userId, password)
     res.clearCookie(COOKIE_NAME)
     res.clearCookie(USER_ID_COOKIE)
     res.status(204).send()
