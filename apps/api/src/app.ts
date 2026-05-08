@@ -23,7 +23,7 @@ const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:3000"
 
 app.use(
   cors({
-    origin: frontendUrl,
+    origin: [frontendUrl, "https://ridelogger.au", "https://www.ridelogger.au"],
     credentials: true,
   }),
 )
