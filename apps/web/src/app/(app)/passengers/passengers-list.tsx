@@ -17,6 +17,11 @@ export function PassengersList({ passengers, onRefresh }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [addOpen, setAddOpen] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [search, setSearch] = useState("")
+
+  const filtered = passengers.filter((p) =>
+    p.name.toLowerCase().includes(search.toLowerCase())
+  )
 
   async function handleDelete(id: string) {
     if (!confirm("Remove this passenger?")) return
@@ -45,13 +50,25 @@ export function PassengersList({ passengers, onRefresh }: Props) {
         </Dialog>
       </div>
 
+      {passengers.length > 0 && (
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search passengers…"
+          className="w-full border rounded-md px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+      )}
+
       {passengers.length === 0 ? (
         <p className="text-sm text-muted-foreground py-8 text-center">
           No passengers yet. Add one to get started.
         </p>
+      ) : filtered.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-4 text-center">No passengers match &ldquo;{search}&rdquo;.</p>
       ) : (
         <ul className="space-y-2">
-          {passengers.map((p) => (
+          {filtered.map((p) => (
             <li key={p.id} className="border rounded-lg px-4 py-3 flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="font-medium">{p.name}</p>

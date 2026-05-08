@@ -1,10 +1,12 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { ChevronDown, ChevronUp, MapPin, Home, Pencil } from "lucide-react"
+import { ChevronDown, ChevronUp, MapPin, Home, Pencil, UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { DestinationPicker } from "./destination-picker"
 import { PreviousDrives, buildSlotsFromDetail } from "./previous-drives"
+import { PassengerForm } from "@/app/(app)/passengers/passenger-form"
 import { api } from "@/lib/api/client"
 import { DriveResultsTable } from "./drive-results-table"
 import type { Passenger, Location, AppSettings, DriveLegInput, DriveLegResult, SaveLegInput, DriveDayDetail } from "@/lib/api/types"
@@ -14,6 +16,7 @@ interface Props {
   locations: Location[]
   settings: AppSettings
   onLocationsChange: (locations: Location[]) => void
+  onPassengersChange: (passengers: Passenger[]) => void
   initialDayDetail?: DriveDayDetail
 }
 
@@ -260,7 +263,7 @@ function SaveSection({ date, legsForSave, onSaved }: SaveSectionProps) {
   )
 }
 
-export function DrivePlanner({ passengers, locations, settings, onLocationsChange, initialDayDetail }: Props) {
+export function DrivePlanner({ passengers, locations, settings, onLocationsChange, onPassengersChange, initialDayDetail }: Props) {
   const [date, setDate] = useState(todayLocal)
   const [slots, setSlots] = useState<PassengerSlot[]>([])
   const [pickerTarget, setPickerTarget] = useState<PickerTarget | null>(null)
@@ -268,6 +271,8 @@ export function DrivePlanner({ passengers, locations, settings, onLocationsChang
   const [legsForSave, setLegsForSave] = useState<SaveLegInput[] | null>(null)
   const [calculating, setCalculating] = useState(false)
   const [calcError, setCalcError] = useState("")
+  const [quickAddOpen, setQuickAddOpen] = useState(false)
+  const [passengerSearch, setPassengerSearch] = useState("")
 
   useEffect(() => {
     if (!initialDayDetail || passengers.length === 0 || locations.length === 0) return
@@ -280,8 +285,15 @@ export function DrivePlanner({ passengers, locations, settings, onLocationsChang
   const lastSlotComplete = slots.length > 0 && slots[slots.length - 1].dropoffLocationId !== null
   const allSlotsComplete = slots.length > 0 && slots.every((s) => s.dropoffLocationId !== null)
 
+  async function handleQuickAddDone() {
+    setQuickAddOpen(false)
+    const fresh = await api.passengers.list()
+    onPassengersChange(fresh)
+  }
+
   function addPassenger(p: Passenger) {
     const homeLocation = locations.find((l) => l.id === p.home_location_id)
+    setPassengerSearch("")
     setResults(null)
     setLegsForSave(null)
     setSlots((prev) => [
@@ -380,31 +392,61 @@ export function DrivePlanner({ passengers, locations, settings, onLocationsChang
       />
 
       <div className="space-y-2">
-        <p className="text-sm font-medium">Passengers</p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm font-medium">Passengers</p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setQuickAddOpen(true)}
+            className="text-xs h-7 px-2"
+          >
+            <UserPlus className="h-3.5 w-3.5 mr-1" />
+            New passenger
+          </Button>
+        </div>
         {passengers.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No passengers saved yet. <a href="/passengers" className="underline">Add one first.</a>
+            No passengers saved yet. Use the button above or go to <a href="/passengers" className="underline">Passengers</a>.
           </p>
         ) : unselectedPassengers.length > 0 ? (
-          <div className="space-y-1.5">
-            <p className="text-xs text-muted-foreground">Select a passenger to add them to the day:</p>
+          <div className="space-y-2">
+            <input
+              type="text"
+              value={passengerSearch}
+              onChange={(e) => setPassengerSearch(e.target.value)}
+              placeholder="Search passengers…"
+              className="w-full border rounded-md px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+            />
             <div className="flex flex-wrap gap-2">
-              {unselectedPassengers.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => addPassenger(p)}
-                  className="border rounded-lg px-3 py-2 text-sm hover:bg-accent transition-colors text-left"
-                >
-                  {p.name}
-                </button>
-              ))}
+              {unselectedPassengers
+                .filter((p) => p.name.toLowerCase().includes(passengerSearch.toLowerCase()))
+                .map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => addPassenger(p)}
+                    className="border rounded-lg px-3 py-2 text-sm hover:bg-accent transition-colors text-left"
+                  >
+                    {p.name}
+                  </button>
+                ))}
             </div>
+            {passengerSearch && unselectedPassengers.filter((p) => p.name.toLowerCase().includes(passengerSearch.toLowerCase())).length === 0 && (
+              <p className="text-xs text-muted-foreground">No passengers match &ldquo;{passengerSearch}&rdquo;.</p>
+            )}
           </div>
         ) : slots.length > 0 ? (
           <p className="text-xs text-muted-foreground">All passengers added.</p>
         ) : null}
       </div>
+
+      <Dialog open={quickAddOpen} onOpenChange={setQuickAddOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Add new passenger</DialogTitle></DialogHeader>
+          <PassengerForm onDone={handleQuickAddDone} />
+        </DialogContent>
+      </Dialog>
 
       {slots.length > 0 && (
         <div className="space-y-2">

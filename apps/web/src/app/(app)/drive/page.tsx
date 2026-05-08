@@ -46,6 +46,7 @@ export default function DrivePage() {
       locations={locations}
       settings={settings}
       onLocationsChange={setLocations}
+      onPassengersChange={setPassengers}
       initialDayDetail={initialDayDetail}
     />
   )
