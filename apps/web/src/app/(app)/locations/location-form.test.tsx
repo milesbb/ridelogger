@@ -1,0 +1,158 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { LocationForm } from './location-form'
+import { api } from '@/lib/api/client'
+import type { Location } from '@/lib/api/types'
+
+vi.mock('@/lib/api/client', () => ({
+  api: {
+    locations: {
+      create: vi.fn(),
+      update: vi.fn(),
+    },
+  },
+}))
+
+const onDone = vi.fn()
+
+const existing: Location = {
+  id: 'loc-1',
+  user_id: 'u1',
+  name: "St Vincent's Hospital",
+  address: '41 Victoria Parade, Fitzroy VIC 3065',
+  lat: -37.8064,
+  lon: 144.9793,
+  created_at: '',
+  updated_at: '',
+}
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  onDone.mockReset()
+})
+
+describe('LocationForm — create mode', () => {
+  it('renders name and address fields', () => {
+    render(<LocationForm onDone={onDone} />)
+    expect(screen.getByLabelText(/name/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/address/i)).toBeInTheDocument()
+  })
+
+  it('shows Add location submit button', () => {
+    render(<LocationForm onDone={onDone} />)
+    expect(screen.getByRole('button', { name: /add location/i })).toBeInTheDocument()
+  })
+
+  it('calls api.locations.create with entered values on submit', async () => {
+    vi.mocked(api.locations.create).mockResolvedValue(existing)
+    render(<LocationForm onDone={onDone} />)
+
+    fireEvent.change(screen.getByLabelText(/name/i), { target: { value: "St Vincent's Hospital" } })
+    fireEvent.change(screen.getByLabelText(/address/i), { target: { value: '41 Victoria Parade' } })
+    fireEvent.submit(screen.getByRole('button', { name: /add location/i }).closest('form')!)
+
+    await waitFor(() =>
+      expect(vi.mocked(api.locations.create)).toHaveBeenCalledWith({
+        name: "St Vincent's Hospital",
+        address: '41 Victoria Parade',
+      })
+    )
+  })
+
+  it('calls onDone with the created location after successful create', async () => {
+    vi.mocked(api.locations.create).mockResolvedValue(existing)
+    render(<LocationForm onDone={onDone} />)
+
+    fireEvent.change(screen.getByLabelText(/name/i), { target: { value: 'Anywhere' } })
+    fireEvent.change(screen.getByLabelText(/address/i), { target: { value: '1 Some St' } })
+    fireEvent.submit(screen.getByRole('button', { name: /add location/i }).closest('form')!)
+
+    await waitFor(() => expect(onDone).toHaveBeenCalledWith(existing))
+  })
+
+  it('shows error message when create fails', async () => {
+    vi.mocked(api.locations.create).mockRejectedValue(new Error('Address not found'))
+    render(<LocationForm onDone={onDone} />)
+
+    fireEvent.change(screen.getByLabelText(/name/i), { target: { value: 'X' } })
+    fireEvent.change(screen.getByLabelText(/address/i), { target: { value: 'nowhere' } })
+    fireEvent.submit(screen.getByRole('button', { name: /add location/i }).closest('form')!)
+
+    await waitFor(() => expect(screen.getByText('Address not found')).toBeInTheDocument())
+    expect(onDone).not.toHaveBeenCalled()
+  })
+
+  it('disables submit button while saving', async () => {
+    let resolve: (v: Location) => void
+    vi.mocked(api.locations.create).mockReturnValue(new Promise((r) => { resolve = r }))
+    render(<LocationForm onDone={onDone} />)
+
+    fireEvent.change(screen.getByLabelText(/name/i), { target: { value: 'X' } })
+    fireEvent.change(screen.getByLabelText(/address/i), { target: { value: '1 X St' } })
+    fireEvent.submit(screen.getByRole('button', { name: /add location/i }).closest('form')!)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: /saving/i })).toBeDisabled())
+    resolve!(existing)
+  })
+
+  it('pre-fills address from prefillAddress prop', () => {
+    render(<LocationForm prefillAddress="42 Pre-filled Rd" onDone={onDone} />)
+    expect(screen.getByLabelText(/address/i)).toHaveValue('42 Pre-filled Rd')
+  })
+})
+
+describe('LocationForm — edit mode', () => {
+  it('shows Save changes button instead of Add location', () => {
+    render(<LocationForm existing={existing} onDone={onDone} />)
+    expect(screen.getByRole('button', { name: /save changes/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /add location/i })).not.toBeInTheDocument()
+  })
+
+  it('pre-fills name and address fields with existing values', () => {
+    render(<LocationForm existing={existing} onDone={onDone} />)
+    expect(screen.getByLabelText(/name/i)).toHaveValue(existing.name)
+    expect(screen.getByLabelText(/address/i)).toHaveValue(existing.address)
+  })
+
+  it('calls api.locations.update with edited values on submit', async () => {
+    vi.mocked(api.locations.update).mockResolvedValue(existing)
+    render(<LocationForm existing={existing} onDone={onDone} />)
+
+    fireEvent.change(screen.getByLabelText(/name/i), { target: { value: 'Royal Melbourne' } })
+    fireEvent.submit(screen.getByRole('button', { name: /save changes/i }).closest('form')!)
+
+    await waitFor(() =>
+      expect(vi.mocked(api.locations.update)).toHaveBeenCalledWith(existing.id, {
+        name: 'Royal Melbourne',
+        address: existing.address,
+      })
+    )
+  })
+
+  it('calls onDone with the updated location after successful update', async () => {
+    vi.mocked(api.locations.update).mockResolvedValue(existing)
+    render(<LocationForm existing={existing} onDone={onDone} />)
+
+    fireEvent.submit(screen.getByRole('button', { name: /save changes/i }).closest('form')!)
+
+    await waitFor(() => expect(onDone).toHaveBeenCalledWith(existing))
+  })
+
+  it('shows error message when update fails', async () => {
+    vi.mocked(api.locations.update).mockRejectedValue(new Error('Network error'))
+    render(<LocationForm existing={existing} onDone={onDone} />)
+
+    fireEvent.submit(screen.getByRole('button', { name: /save changes/i }).closest('form')!)
+
+    await waitFor(() => expect(screen.getByText('Network error')).toBeInTheDocument())
+    expect(onDone).not.toHaveBeenCalled()
+  })
+})
+
+describe('LocationForm — cancel', () => {
+  it('calls onDone without a value when Cancel is clicked', () => {
+    render(<LocationForm onDone={onDone} />)
+    fireEvent.click(screen.getByRole('button', { name: /cancel/i }))
+    expect(onDone).toHaveBeenCalledOnce()
+  })
+})
