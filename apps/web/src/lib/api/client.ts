@@ -1,4 +1,4 @@
-import type { Passenger, Location, AppSettings, DriveLegInput, DriveLegResult, SaveDriveDayInput, DriveDaySummary, DriveDayDetail } from "./types"
+import type { Passenger, Location, AppSettings, DriveLegInput, DriveLegResult, SaveDriveDayInput, DriveDaySummary, DriveDayDetail, ExportLeg } from "./types"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"
 
@@ -131,7 +131,11 @@ export const api = {
     listDays: () => apiFetch<DriveDaySummary[]>("/v1/drive/days"),
     listSimilarDays: (date: string) =>
       apiFetch<DriveDaySummary[]>(`/v1/drive/days/similar?date=${encodeURIComponent(date)}`),
+    exportDays: (from: string, to: string) =>
+      apiFetch<ExportLeg[]>(`/v1/drive/days/export?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`),
     getDay: (id: string) => apiFetch<DriveDayDetail>(`/v1/drive/days/${id}`),
     deleteDay: (id: string) => apiFetch<void>(`/v1/drive/days/${id}`, { method: "DELETE" }),
+    getPassengerDropoffs: (passengerId: string) =>
+      apiFetch<Location[]>(`/v1/drive/passengers/${encodeURIComponent(passengerId)}/dropoffs`),
   },
 }

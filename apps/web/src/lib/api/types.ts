@@ -46,6 +46,8 @@ export interface DriveLegResult {
   durationMin: number
   error?: string
   passengerLeg?: boolean
+  fromLocationName?: string
+  toLocationName?: string
 }
 
 export interface SaveLegInput {
@@ -90,8 +92,14 @@ export interface SavedLeg {
   duration_min: number
   is_passenger_leg: boolean
   position: number
+  from_location_name: string | null
+  to_location_name: string | null
   created_at: string
   updated_at: string
+}
+
+export interface ExportLeg extends SavedLeg {
+  drive_date: string
 }
 
 export interface DriveDayDetail extends DriveDaySummary {

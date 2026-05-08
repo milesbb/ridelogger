@@ -7,7 +7,7 @@ vi.mock('@ridelogger/routing')
 import { getLocation } from '../data/locations'
 import * as driveDaysDb from '../data/drive_days'
 import { createRoutingService } from '@ridelogger/routing'
-import { calculateDriveDay, saveDriveDay, listDriveDays, getSimilarDays, getDriveDay, deleteDriveDay } from './drive'
+import { calculateDriveDay, saveDriveDay, listDriveDays, getSimilarDays, getDriveDay, deleteDriveDay, getPassengerDropoffs, exportDriveDays } from './drive'
 
 const mockHome = {
   id: 'loc-home',
@@ -163,6 +163,8 @@ const mockLeg = {
   duration_min: 22,
   is_passenger_leg: true,
   position: 1,
+  from_location_name: 'Home',
+  to_location_name: 'Hospital',
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 }
@@ -250,5 +252,25 @@ describe('deleteDriveDay', () => {
   it('throws NotFound when the drive day does not exist', async () => {
     vi.mocked(driveDaysDb.deleteDriveDay).mockResolvedValue(false)
     await expect(deleteDriveDay('missing', 'u-1')).rejects.toMatchObject({ httpStatus: 404 })
+  })
+})
+
+describe('getPassengerDropoffs', () => {
+  it('returns dropoff locations for a passenger', async () => {
+    const dropoffs = [{ ...mockHome, name: 'Hospital' }]
+    vi.mocked(driveDaysDb.getPassengerDropoffHistory).mockResolvedValue(dropoffs)
+    const result = await getPassengerDropoffs('u-1', 'p-1')
+    expect(result).toEqual(dropoffs)
+    expect(driveDaysDb.getPassengerDropoffHistory).toHaveBeenCalledWith('u-1', 'p-1', 5)
+  })
+})
+
+describe('exportDriveDays', () => {
+  it('returns export legs for a date range', async () => {
+    const exportLeg = { ...mockLeg, drive_date: '2026-05-06' }
+    vi.mocked(driveDaysDb.getLegsForExport).mockResolvedValue([exportLeg])
+    const result = await exportDriveDays('u-1', '2026-05-01', '2026-05-31')
+    expect(result).toEqual([exportLeg])
+    expect(driveDaysDb.getLegsForExport).toHaveBeenCalledWith('u-1', '2026-05-01', '2026-05-31')
   })
 })

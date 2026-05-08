@@ -14,7 +14,7 @@ vi.mock('../utils/logging', () => ({
   default: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }))
 
-import { calculateDriveDay, saveDriveDay, listDriveDays, getSimilarDays, getDriveDay, deleteDriveDay } from '../service/drive'
+import { calculateDriveDay, saveDriveDay, listDriveDays, getSimilarDays, getDriveDay, deleteDriveDay, exportDriveDays, getPassengerDropoffs } from '../service/drive'
 import driveRouter from './drive'
 import { errorHandler } from '../middlewares/errorHandler'
 import { Errors } from '../utils/errorTypes'
@@ -45,15 +45,23 @@ const mockSummary = {
   updated_at: new Date().toISOString(),
 }
 
+const mockLeg = {
+  id: 'leg-1', drive_day_id: 'dd-1', user_id: 'user-1',
+  from_location_id: 'loc-a', to_location_id: 'loc-b',
+  passenger_id: 'p-1', label: 'John: pick-up → drop-off',
+  distance_km: 12.1, duration_min: 22, is_passenger_leg: true,
+  position: 0, from_location_name: 'Home', to_location_name: 'Hospital',
+  created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+}
+
 const mockDetail = {
   ...mockSummary,
-  legs: [{
-    id: 'leg-1', drive_day_id: 'dd-1', user_id: 'user-1',
-    from_location_id: 'loc-a', to_location_id: 'loc-b',
-    passenger_id: 'p-1', label: 'John: pick-up → drop-off',
-    distance_km: 12.1, duration_min: 22, is_passenger_leg: true,
-    position: 0, created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
-  }],
+  legs: [mockLeg],
+}
+
+const mockLocation = {
+  id: 'loc-b', user_id: 'user-1', name: 'Hospital', address: '1 Health Ave',
+  lat: -37.87, lon: 145.06, created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
 }
 
 describe('POST /calculate', () => {
@@ -149,5 +157,36 @@ describe('DELETE /days/:id', () => {
     vi.mocked(deleteDriveDay).mockRejectedValue(Errors.NotFound('Drive day'))
     const res = await request.delete('/days/missing')
     expect(res.status).toBe(404)
+  })
+})
+
+describe('GET /days/export', () => {
+  it('returns export legs for a valid date range', async () => {
+    const exportLeg = { ...mockLeg, drive_date: '2026-05-06' }
+    vi.mocked(exportDriveDays).mockResolvedValue([exportLeg])
+    const res = await request.get('/days/export?from=2026-05-01&to=2026-05-31')
+    expect(res.status).toBe(200)
+    expect(res.body).toHaveLength(1)
+    expect(res.body[0].drive_date).toBe('2026-05-06')
+  })
+
+  it('returns 400 when from is missing', async () => {
+    const res = await request.get('/days/export?to=2026-05-31')
+    expect(res.status).toBe(400)
+  })
+
+  it('returns 400 when to is malformed', async () => {
+    const res = await request.get('/days/export?from=2026-05-01&to=not-a-date')
+    expect(res.status).toBe(400)
+  })
+})
+
+describe('GET /passengers/:passengerId/dropoffs', () => {
+  it('returns dropoff locations for a passenger', async () => {
+    vi.mocked(getPassengerDropoffs).mockResolvedValue([mockLocation])
+    const res = await request.get('/passengers/p-1/dropoffs')
+    expect(res.status).toBe(200)
+    expect(res.body).toHaveLength(1)
+    expect(res.body[0].name).toBe('Hospital')
   })
 })

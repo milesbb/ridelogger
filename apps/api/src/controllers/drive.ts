@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from "express"
 import { requireAuth, AuthenticatedRequest } from "../middlewares/auth"
-import { calculateDriveDay, saveDriveDay, listDriveDays, getSimilarDays, getDriveDay, deleteDriveDay } from "../service/drive"
+import { calculateDriveDay, saveDriveDay, listDriveDays, getSimilarDays, getDriveDay, deleteDriveDay, exportDriveDays, getPassengerDropoffs } from "../service/drive"
 import { Errors } from "../utils/errorTypes"
 
 const router = Router()
@@ -41,6 +41,27 @@ router.get("/days/similar", async (req: Request, res: Response, next: NextFuncti
     }
     const userId = (req as AuthenticatedRequest).userId
     res.json(await getSimilarDays(userId, date))
+  } catch (err) { next(err) }
+})
+
+router.get("/days/export", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { from, to } = req.query
+    if (typeof from !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(from)) {
+      throw Errors.BadRequest("from query param is required (YYYY-MM-DD)")
+    }
+    if (typeof to !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(to)) {
+      throw Errors.BadRequest("to query param is required (YYYY-MM-DD)")
+    }
+    const userId = (req as AuthenticatedRequest).userId
+    res.json(await exportDriveDays(userId, from, to))
+  } catch (err) { next(err) }
+})
+
+router.get("/passengers/:passengerId/dropoffs", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req as AuthenticatedRequest).userId
+    res.json(await getPassengerDropoffs(userId, req.params.passengerId))
   } catch (err) { next(err) }
 })
 

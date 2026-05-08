@@ -22,8 +22,14 @@ export interface Leg {
   duration_min: number
   is_passenger_leg: boolean
   position: number
+  from_location_name: string | null
+  to_location_name: string | null
   created_at: string
   updated_at: string
+}
+
+export interface ExportLeg extends Leg {
+  drive_date: string
 }
 
 export interface DriveDaySummary extends DriveDay {
@@ -80,6 +86,8 @@ function parseLeg(row: Record<string, unknown>): Leg {
     duration_min: col(row, 'duration_min'),
     is_passenger_leg: col(row, 'is_passenger_leg'),
     position: col(row, 'position'),
+    from_location_name: optCol(row, 'from_location_name'),
+    to_location_name: optCol(row, 'to_location_name'),
     created_at: col(row, 'created_at'),
     updated_at: col(row, 'updated_at'),
   }
@@ -168,7 +176,14 @@ export async function getDriveDayWithLegs(id: string, userId: string): Promise<D
       [id, userId],
     ),
     query<Record<string, unknown>>(
-      `SELECT * FROM legs WHERE drive_day_id = $1 ORDER BY position`,
+      `SELECT l.*,
+         fl.name AS from_location_name,
+         tl.name AS to_location_name
+       FROM legs l
+       LEFT JOIN locations fl ON fl.id = l.from_location_id
+       LEFT JOIN locations tl ON tl.id = l.to_location_id
+       WHERE l.drive_day_id = $1
+       ORDER BY l.position`,
       [id],
     ),
   ])
@@ -200,6 +215,62 @@ export async function listSimilarDriveDays(
     [userId, date, limit],
   )
   return rows.map(parseSummary)
+}
+
+export async function getPassengerDropoffHistory(
+  userId: string,
+  passengerId: string,
+  limit: number,
+): Promise<Array<{ id: string; user_id: string; name: string; address: string; lat: number | null; lon: number | null; created_at: string; updated_at: string }>> {
+  const rows = await query<Record<string, unknown>>(
+    `SELECT DISTINCT ON (l.to_location_id)
+       loc.id, loc.user_id, loc.name, loc.address, loc.lat, loc.lon,
+       loc.created_at, loc.updated_at
+     FROM legs l
+     JOIN locations loc ON loc.id = l.to_location_id
+     WHERE l.passenger_id = $1
+       AND l.user_id = $2
+       AND l.is_passenger_leg = true
+     ORDER BY l.to_location_id, l.created_at DESC
+     LIMIT $3`,
+    [passengerId, userId, limit],
+  )
+  return rows.map((r) => ({
+    id: col<string>(r, 'id'),
+    user_id: col<string>(r, 'user_id'),
+    name: col<string>(r, 'name'),
+    address: col<string>(r, 'address'),
+    lat: optCol<number>(r, 'lat'),
+    lon: optCol<number>(r, 'lon'),
+    created_at: col<string>(r, 'created_at'),
+    updated_at: col<string>(r, 'updated_at'),
+  }))
+}
+
+export async function getLegsForExport(
+  userId: string,
+  from: string,
+  to: string,
+): Promise<ExportLeg[]> {
+  const rows = await query<Record<string, unknown>>(
+    `SELECT l.*,
+       to_char(dd.date, 'YYYY-MM-DD') AS drive_date,
+       fl.name AS from_location_name,
+       tl.name AS to_location_name
+     FROM legs l
+     JOIN drive_days dd ON dd.id = l.drive_day_id
+     LEFT JOIN locations fl ON fl.id = l.from_location_id
+     LEFT JOIN locations tl ON tl.id = l.to_location_id
+     WHERE dd.user_id = $1
+       AND dd.date >= $2::date
+       AND dd.date <= $3::date
+     ORDER BY dd.date DESC, l.position ASC`,
+    [userId, from, to],
+  )
+  return rows.map((r) => ({
+    ...parseLeg(r),
+    drive_date: col<string>(r, 'drive_date'),
+  }))
 }
 
 export async function findDriveDaysByLocation(

@@ -98,6 +98,21 @@ export async function listDriveDays(userId: string): Promise<db.DriveDaySummary[
   return db.listDriveDays(userId)
 }
 
+export async function getPassengerDropoffs(
+  userId: string,
+  passengerId: string,
+): ReturnType<typeof db.getPassengerDropoffHistory> {
+  return db.getPassengerDropoffHistory(userId, passengerId, 5)
+}
+
+export async function exportDriveDays(
+  userId: string,
+  from: string,
+  to: string,
+): Promise<db.ExportLeg[]> {
+  return db.getLegsForExport(userId, from, to)
+}
+
 export async function getSimilarDays(
   userId: string,
   date: string,
