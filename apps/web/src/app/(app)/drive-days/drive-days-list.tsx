@@ -55,7 +55,7 @@ export function DriveDaysList({ days, onDayDeleted }: Props) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-2 flex-wrap">
-        <h1 className="text-xl font-semibold">Drive Days</h1>
+        <h1 className="text-xl font-semibold">Drive Log</h1>
         <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
           <input
             type="checkbox"
