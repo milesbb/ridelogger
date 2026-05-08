@@ -74,6 +74,8 @@ Resources:
       CorsConfiguration:
         AllowOrigins:
           - !Ref FrontendUrl
+          - https://ridelogger.au
+          - https://www.ridelogger.au
         AllowMethods:
           - GET
           - POST
