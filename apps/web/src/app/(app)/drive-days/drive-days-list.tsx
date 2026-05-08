@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { DriveDayDetailModal } from "./drive-day-detail-modal"
+import { DriveLogExport } from "./drive-log-export"
 import type { DriveDaySummary } from "@/lib/api/types"
 
 interface Props {
@@ -46,14 +47,25 @@ function groupByDate(days: DriveDaySummary[]): DayGroup[] {
   return groups
 }
 
+function localDateString(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+}
+
 export function DriveDaysList({ days, onDayDeleted }: Props) {
   const [selected, setSelected] = useState<DriveDaySummary | null>(null)
   const [showNonPassenger, setShowNonPassenger] = useState(false)
+
+  const today = new Date()
+  const thirtyDaysAgo = new Date(today)
+  thirtyDaysAgo.setDate(today.getDate() - 30)
+  const defaultTo = localDateString(today)
+  const defaultFrom = localDateString(thirtyDaysAgo)
 
   const groups = groupByDate(days)
 
   return (
     <div className="space-y-6">
+      <DriveLogExport defaultFrom={defaultFrom} defaultTo={defaultTo} />
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <h1 className="text-xl font-semibold">Drive Log</h1>
         <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
