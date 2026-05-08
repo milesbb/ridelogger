@@ -50,7 +50,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               New Drive Day
             </Link>
             <Link href="/drive-days" className="text-muted-foreground hover:text-foreground transition-colors">
-              New Drive Log
+              Drive Log
             </Link>
             <Link href="/passengers" className="text-muted-foreground hover:text-foreground transition-colors">
               Passengers
@@ -77,7 +77,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 New Drive Day
               </Link>
               <Link href="/drive-days" onClick={closeMenu} className="py-3 border-b text-muted-foreground hover:text-foreground transition-colors">
-                New Drive Log
+                Drive Log
               </Link>
               <Link href="/passengers" onClick={closeMenu} className="py-3 border-b text-muted-foreground hover:text-foreground transition-colors">
                 Passengers

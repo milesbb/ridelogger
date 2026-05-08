@@ -513,29 +513,13 @@ export function DrivePlanner({ passengers, locations, settings, onLocationsChang
       {lastSlotComplete && (
         <div className="space-y-2">
           {calcError && <p className="text-sm text-destructive">{calcError}</p>}
-          <div className="flex flex-col sm:flex-row gap-2">
-            {unselectedPassengers.length > 0 && (
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1"
-                onClick={() => {
-                  const next = unselectedPassengers[0]
-                  addPassenger(next)
-                  window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" })
-                }}
-              >
-                Add another passenger
-              </Button>
-            )}
-            <Button
-              onClick={handleFinishDay}
-              disabled={!allSlotsComplete || calculating}
-              className="flex-1"
-            >
-              {calculating ? "Calculating…" : "Finish day"}
-            </Button>
-          </div>
+          <Button
+            onClick={handleFinishDay}
+            disabled={!allSlotsComplete || calculating}
+            className="w-full sm:w-auto"
+          >
+            {calculating ? "Calculating…" : "Finish day"}
+          </Button>
           {!allSlotsComplete && (
             <p className="text-xs text-muted-foreground text-center">Set all drop-off addresses first.</p>
           )}
