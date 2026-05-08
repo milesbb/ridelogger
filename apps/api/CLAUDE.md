@@ -37,7 +37,7 @@ All addresses live in the `locations` table. No other table stores `address`, `l
 
 ## Tests
 
-**Always update and add tests when changing service or data logic.** Every new service function needs a test. Every changed service function needs its existing tests updated. A service-layer change with no corresponding test change is incomplete.
+**Always update and add tests when changing service or data logic.** Every new service or data function needs a test. Every changed function needs its existing tests updated. A service- or data-layer change with no corresponding test change is incomplete.
 
 Tests live alongside the source file (`foo.ts` → `foo.test.ts`). Run `vitest` from the `apps/api` directory to verify.
 

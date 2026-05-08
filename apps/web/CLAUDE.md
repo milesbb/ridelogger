@@ -53,3 +53,9 @@ All addresses in this app are stored as `locations` rows on the API. Any form or
 - `login()` / `register()`: calls API, stores token in sessionStorage via `setToken()`, updates context state.
 - `logout()`: clears token, calls API logout, redirects to `/login`.
 - `apiFetch` in `client.ts` automatically retries with a refreshed token on a 401 response.
+
+## Tests
+
+- **Update and add tests for any change to pure utility functions** in `lib/` (e.g. `drive-utils.ts`). A change to a utility with no corresponding test change is incomplete.
+- Do not test React components or pages — test the logic they depend on (utilities, pure functions).
+- Run `vitest` from `apps/web` to verify.

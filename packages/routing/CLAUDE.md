@@ -9,3 +9,7 @@ Provider-agnostic routing abstraction. The rest of the codebase calls `createRou
 3. Set `ROUTING_PROVIDER=<provider>` in the API env.
 
 The `ors.ts` implementation is the reference. Match its function signatures exactly.
+
+## Tests
+
+When adding a new provider, add tests alongside the source file (`<provider>.ts` → `<provider>.test.ts`). Mock the underlying HTTP client at the boundary.
