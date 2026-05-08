@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
-import { ChevronDown, ChevronUp, MapPin, Home } from "lucide-react"
+import { useState, useRef, useEffect } from "react"
+import { ChevronDown, ChevronUp, MapPin, Home, Pencil } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DestinationPicker } from "./destination-picker"
+import { PreviousDrives } from "./previous-drives"
 import { api } from "@/lib/api/client"
 import { DriveResultsTable } from "./drive-results-table"
 import type { Passenger, Location, AppSettings, DriveLegInput, DriveLegResult, SaveLegInput } from "@/lib/api/types"
@@ -15,7 +16,7 @@ interface Props {
   onLocationsChange: (locations: Location[]) => void
 }
 
-interface PassengerSlot {
+export interface PassengerSlot {
   passenger: Passenger
   pickupLocationId: string
   pickupLocationName: string
@@ -147,13 +148,71 @@ function todayLocal(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
 }
 
+function formatDateHeader(isoDate: string): string {
+  const [year, month, day] = isoDate.split("-").map(Number)
+  return new Date(year, month - 1, day).toLocaleDateString("en-AU", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  })
+}
+
+interface DateButtonProps {
+  date: string
+  onDateChange: (d: string) => void
+}
+
+function DateButton({ date, onDateChange }: DateButtonProps) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener("mousedown", handleClick)
+    return () => document.removeEventListener("mousedown", handleClick)
+  }, [open])
+
+  return (
+    <div className="relative inline-block" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="text-xl font-semibold underline decoration-dashed underline-offset-4 hover:text-muted-foreground transition-colors flex items-center gap-1"
+      >
+        {formatDateHeader(date)}
+        <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 mt-1 z-10 bg-background border rounded-lg shadow-md p-3">
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => {
+              if (e.target.value) {
+                onDateChange(e.target.value)
+                setOpen(false)
+              }
+            }}
+            className="border rounded-md px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+            autoFocus
+          />
+        </div>
+      )}
+    </div>
+  )
+}
+
 interface SaveSectionProps {
+  date: string
   legsForSave: SaveLegInput[]
   onSaved: () => void
 }
 
-function SaveSection({ legsForSave, onSaved }: SaveSectionProps) {
-  const [date, setDate] = useState(todayLocal)
+function SaveSection({ date, legsForSave, onSaved }: SaveSectionProps) {
   const [startTime, setStartTime] = useState("")
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState("")
@@ -182,15 +241,6 @@ function SaveSection({ legsForSave, onSaved }: SaveSectionProps) {
       <p className="text-sm font-medium">Save drive day</p>
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="flex-1 space-y-1">
-          <label className="text-xs text-muted-foreground">Date</label>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="w-full border rounded-md px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-          />
-        </div>
-        <div className="flex-1 space-y-1">
           <label className="text-xs text-muted-foreground">Start time (optional)</label>
           <input
             type="time"
@@ -210,6 +260,7 @@ function SaveSection({ legsForSave, onSaved }: SaveSectionProps) {
 }
 
 export function DrivePlanner({ passengers, locations, settings, onLocationsChange }: Props) {
+  const [date, setDate] = useState(todayLocal)
   const [slots, setSlots] = useState<PassengerSlot[]>([])
   const [pickerTarget, setPickerTarget] = useState<PickerTarget | null>(null)
   const [results, setResults] = useState<DriveLegResult[] | null>(null)
@@ -296,12 +347,30 @@ export function DrivePlanner({ passengers, locations, settings, onLocationsChang
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold">Drive Day</h1>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xl font-semibold whitespace-nowrap">Drive Day on</span>
+          <DateButton date={date} onDateChange={(d) => {
+            setDate(d)
+            setResults(null)
+            setLegsForSave(null)
+          }} />
+        </div>
         <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
           <Home className="h-3.5 w-3.5 shrink-0" />
           <span>Starting from: {settings.home_address}</span>
         </div>
       </div>
+
+      <PreviousDrives
+        date={date}
+        passengers={passengers}
+        locations={locations}
+        onSelect={(populatedSlots) => {
+          setResults(null)
+          setLegsForSave(null)
+          setSlots(populatedSlots)
+        }}
+      />
 
       <div className="space-y-2">
         <p className="text-sm font-medium">Passengers</p>
@@ -427,7 +496,7 @@ export function DrivePlanner({ passengers, locations, settings, onLocationsChang
       {results && <DriveResultsTable results={results} />}
 
       {results && legsForSave && (
-        <SaveSection legsForSave={legsForSave} onSaved={handleSaved} />
+        <SaveSection date={date} legsForSave={legsForSave} onSaved={handleSaved} />
       )}
 
       {pickerTarget !== null && activeSlot && (
