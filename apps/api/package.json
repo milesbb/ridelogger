@@ -6,7 +6,8 @@
     "dev": "tsx watch src/app-local.ts",
     "build": "webpack --config webpack.config.js && cd dist && zip -j api.zip lambda.js",
     "lint": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run --project=unit",
+    "test:contracts": "vitest run --project=contracts"
   },
   "dependencies": {
     "@aws-sdk/client-ssm": "^3.600.0",
