@@ -41,9 +41,16 @@ function formatTime(t: string | null): string | null {
   return `${h12}:${m} ${ampm}`
 }
 
-function buildExportRows(legs: SavedLeg[]): ExportRow[] {
+function displayLabel(leg: SavedLeg, showLocationNames: boolean): string {
+  if (showLocationNames && leg.from_location_name && leg.to_location_name) {
+    return `${leg.label} (${leg.from_location_name} → ${leg.to_location_name})`
+  }
+  return leg.label
+}
+
+function buildExportRows(legs: SavedLeg[], showLocationNames: boolean): ExportRow[] {
   const rows: ExportRow[] = legs.map((l) => ({
-    label: l.label,
+    label: displayLabel(l, showLocationNames),
     distanceKm: l.distance_km,
     durationMin: l.duration_min,
   }))
@@ -57,14 +64,6 @@ function buildExportRows(legs: SavedLeg[]): ExportRow[] {
   return rows
 }
 
-function legToResult(leg: SavedLeg) {
-  return {
-    label: leg.label,
-    distanceKm: leg.distance_km,
-    durationMin: leg.duration_min,
-    passengerLeg: leg.is_passenger_leg,
-  }
-}
 
 export function DriveDayDetailModal({ summary, onClose, onDeleted }: Props) {
   const router = useRouter()
@@ -72,6 +71,7 @@ export function DriveDayDetailModal({ summary, onClose, onDeleted }: Props) {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState("")
   const [showNonPassenger, setShowNonPassenger] = useState(false)
+  const [showLocationNames, setShowLocationNames] = useState(true)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
@@ -98,7 +98,6 @@ export function DriveDayDetailModal({ summary, onClose, onDeleted }: Props) {
   const visibleLegs = detail
     ? (showNonPassenger ? detail.legs : detail.legs.filter((l) => l.is_passenger_leg))
     : []
-  const results = visibleLegs.map(legToResult)
   const successful = visibleLegs.filter((l) => !l.is_passenger_leg || l.distance_km > 0)
   const totalKm = Math.round(visibleLegs.reduce((s, l) => s + l.distance_km, 0) * 10) / 10
   const totalMin = visibleLegs.reduce((s, l) => s + l.duration_min, 0)
@@ -123,19 +122,30 @@ export function DriveDayDetailModal({ summary, onClose, onDeleted }: Props) {
         {detail && (
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-2 flex-wrap">
-              <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={showNonPassenger}
-                  onChange={(e) => setShowNonPassenger(e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300 accent-primary cursor-pointer"
-                />
-                Include non-passenger drives
-              </label>
+              <div className="flex flex-col gap-1">
+                <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={showNonPassenger}
+                    onChange={(e) => setShowNonPassenger(e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300 accent-primary cursor-pointer"
+                  />
+                  Include non-passenger drives
+                </label>
+                <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={showLocationNames}
+                    onChange={(e) => setShowLocationNames(e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300 accent-primary cursor-pointer"
+                  />
+                  Show location names
+                </label>
+              </div>
               <ExportButtons
                 filename={exportFilename}
                 columns={COLUMNS}
-                rows={buildExportRows(visibleLegs)}
+                rows={buildExportRows(visibleLegs, showLocationNames)}
                 title={exportTitle}
               />
             </div>
@@ -150,11 +160,11 @@ export function DriveDayDetailModal({ summary, onClose, onDeleted }: Props) {
                   </tr>
                 </thead>
                 <tbody>
-                  {results.map((r, i) => (
+                  {visibleLegs.map((leg, i) => (
                     <tr key={i} className="border-b last:border-0">
-                      <td className="px-4 py-2 text-muted-foreground">{r.label}</td>
-                      <td className="px-4 py-2 text-right font-mono">{r.distanceKm}</td>
-                      <td className="px-4 py-2 text-right font-mono">{r.durationMin}</td>
+                      <td className="px-4 py-2 text-muted-foreground">{displayLabel(leg, showLocationNames)}</td>
+                      <td className="px-4 py-2 text-right font-mono">{leg.distance_km}</td>
+                      <td className="px-4 py-2 text-right font-mono">{leg.duration_min}</td>
                     </tr>
                   ))}
                 </tbody>
