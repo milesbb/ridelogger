@@ -98,6 +98,14 @@ export async function listDriveDays(userId: string): Promise<db.DriveDaySummary[
   return db.listDriveDays(userId)
 }
 
+export async function getSimilarDays(
+  userId: string,
+  date: string,
+  limit = 3,
+): Promise<db.DriveDaySummary[]> {
+  return db.listSimilarDriveDays(userId, date, limit)
+}
+
 export async function getDriveDay(id: string, userId: string): Promise<db.DriveDayDetail> {
   const day = await db.getDriveDayWithLegs(id, userId)
   if (!day) throw Errors.NotFound("Drive day")

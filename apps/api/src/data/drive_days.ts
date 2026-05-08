@@ -184,6 +184,24 @@ export async function deleteDriveDay(id: string, userId: string): Promise<boolea
   return rows.length > 0
 }
 
+export async function listSimilarDriveDays(
+  userId: string,
+  date: string,
+  limit: number,
+): Promise<DriveDaySummary[]> {
+  const rows = await query<Record<string, unknown>>(
+    `${SUMMARY_SELECT}
+     WHERE dd.user_id = $1
+       AND EXTRACT(DOW FROM dd.date) = EXTRACT(DOW FROM $2::date)
+       AND dd.date != $2::date
+     GROUP BY dd.id, dd.user_id, dd.date, dd.start_time, dd.created_at, dd.updated_at
+     ORDER BY dd.date DESC
+     LIMIT $3`,
+    [userId, date, limit],
+  )
+  return rows.map(parseSummary)
+}
+
 export async function findDriveDaysByLocation(
   locationId: string,
   userId: string,

@@ -14,7 +14,7 @@ vi.mock('../utils/logging', () => ({
   default: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }))
 
-import { calculateDriveDay, saveDriveDay, listDriveDays, getDriveDay, deleteDriveDay } from '../service/drive'
+import { calculateDriveDay, saveDriveDay, listDriveDays, getSimilarDays, getDriveDay, deleteDriveDay } from '../service/drive'
 import driveRouter from './drive'
 import { errorHandler } from '../middlewares/errorHandler'
 import { Errors } from '../utils/errorTypes'
@@ -100,6 +100,26 @@ describe('GET /days', () => {
     expect(res.status).toBe(200)
     expect(res.body).toHaveLength(1)
     expect(res.body[0].id).toBe('dd-1')
+  })
+})
+
+describe('GET /days/similar', () => {
+  it('returns summaries for the same day of week', async () => {
+    vi.mocked(getSimilarDays).mockResolvedValue([mockSummary])
+    const res = await request.get('/days/similar?date=2026-05-06')
+    expect(res.status).toBe(200)
+    expect(res.body).toHaveLength(1)
+    expect(res.body[0].id).toBe('dd-1')
+  })
+
+  it('returns 400 when date is missing', async () => {
+    const res = await request.get('/days/similar')
+    expect(res.status).toBe(400)
+  })
+
+  it('returns 400 when date is malformed', async () => {
+    const res = await request.get('/days/similar?date=not-a-date')
+    expect(res.status).toBe(400)
   })
 })
 

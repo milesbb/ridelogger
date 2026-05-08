@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from "express"
 import { requireAuth, AuthenticatedRequest } from "../middlewares/auth"
-import { calculateDriveDay, saveDriveDay, listDriveDays, getDriveDay, deleteDriveDay } from "../service/drive"
+import { calculateDriveDay, saveDriveDay, listDriveDays, getSimilarDays, getDriveDay, deleteDriveDay } from "../service/drive"
 import { Errors } from "../utils/errorTypes"
 
 const router = Router()
@@ -30,6 +30,17 @@ router.get("/days", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as AuthenticatedRequest).userId
     res.json(await listDriveDays(userId))
+  } catch (err) { next(err) }
+})
+
+router.get("/days/similar", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { date } = req.query
+    if (typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      throw Errors.BadRequest("date query param is required (YYYY-MM-DD)")
+    }
+    const userId = (req as AuthenticatedRequest).userId
+    res.json(await getSimilarDays(userId, date))
   } catch (err) { next(err) }
 })
 

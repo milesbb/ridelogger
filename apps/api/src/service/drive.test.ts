@@ -7,7 +7,7 @@ vi.mock('@ridelogger/routing')
 import { getLocation } from '../data/locations'
 import * as driveDaysDb from '../data/drive_days'
 import { createRoutingService } from '@ridelogger/routing'
-import { calculateDriveDay, saveDriveDay, listDriveDays, getDriveDay, deleteDriveDay } from './drive'
+import { calculateDriveDay, saveDriveDay, listDriveDays, getSimilarDays, getDriveDay, deleteDriveDay } from './drive'
 
 const mockHome = {
   id: 'loc-home',
@@ -223,6 +223,21 @@ describe('getDriveDay', () => {
   it('throws NotFound when drive day does not exist', async () => {
     vi.mocked(driveDaysDb.getDriveDayWithLegs).mockResolvedValue(null)
     await expect(getDriveDay('missing', 'u-1')).rejects.toMatchObject({ httpStatus: 404 })
+  })
+})
+
+describe('getSimilarDays', () => {
+  it('returns summaries for the same day of week', async () => {
+    vi.mocked(driveDaysDb.listSimilarDriveDays).mockResolvedValue([mockSummary])
+    const result = await getSimilarDays('u-1', '2026-05-06')
+    expect(result).toEqual([mockSummary])
+    expect(driveDaysDb.listSimilarDriveDays).toHaveBeenCalledWith('u-1', '2026-05-06', 3)
+  })
+
+  it('passes a custom limit', async () => {
+    vi.mocked(driveDaysDb.listSimilarDriveDays).mockResolvedValue([])
+    await getSimilarDays('u-1', '2026-05-06', 5)
+    expect(driveDaysDb.listSimilarDriveDays).toHaveBeenCalledWith('u-1', '2026-05-06', 5)
   })
 })
 

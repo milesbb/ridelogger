@@ -129,6 +129,8 @@ export const api = {
         body: JSON.stringify(input),
       }),
     listDays: () => apiFetch<DriveDaySummary[]>("/v1/drive/days"),
+    listSimilarDays: (date: string) =>
+      apiFetch<DriveDaySummary[]>(`/v1/drive/days/similar?date=${encodeURIComponent(date)}`),
     getDay: (id: string) => apiFetch<DriveDayDetail>(`/v1/drive/days/${id}`),
     deleteDay: (id: string) => apiFetch<void>(`/v1/drive/days/${id}`, { method: "DELETE" }),
   },
