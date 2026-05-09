@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { ChevronDown, ChevronUp, MapPin, Home, Pencil, UserPlus } from "lucide-react"
+import { ChevronDown, ChevronUp, GripVertical, MapPin, Home, Pencil, UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { DestinationPicker } from "./destination-picker"
@@ -9,6 +9,9 @@ import { PreviousDrives, buildSlotsFromDetail } from "./previous-drives"
 import { PassengerForm } from "@/app/(app)/passengers/passenger-form"
 import { api } from "@/lib/api/client"
 import { DriveResultsTable } from "./drive-results-table"
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core"
+import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
 import type { Passenger, Location, AppSettings, DriveLegInput, DriveLegResult, SaveLegInput, DriveDayDetail } from "@/lib/api/types"
 
 interface Props {
@@ -263,6 +266,101 @@ function SaveSection({ date, legsForSave, onSaved }: SaveSectionProps) {
   )
 }
 
+interface SortableSlotCardProps {
+  slot: PassengerSlot
+  index: number
+  totalSlots: number
+  onMoveSlot: (index: number, dir: -1 | 1) => void
+  onRemove: (id: string) => void
+  onSetPickerTarget: (target: PickerTarget) => void
+}
+
+function SortableSlotCard({ slot, index, totalSlots, onMoveSlot, onRemove, onSetPickerTarget }: SortableSlotCardProps) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: slot.passenger.id })
+  const style = { transform: CSS.Transform.toString(transform), transition }
+
+  return (
+    <div ref={setNodeRef} style={style} className="border rounded-lg overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-2 bg-muted/30 border-b">
+        <button
+          type="button"
+          aria-label="Drag to reorder"
+          className="text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing touch-none"
+          {...listeners}
+          {...attributes}
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+        <div className="flex flex-col gap-0.5 shrink-0">
+          <button
+            type="button"
+            aria-label="Move up"
+            onClick={() => onMoveSlot(index, -1)}
+            disabled={index === 0}
+            className="text-muted-foreground disabled:opacity-20 hover:text-foreground"
+          >
+            <ChevronUp className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            aria-label="Move down"
+            onClick={() => onMoveSlot(index, 1)}
+            disabled={index === totalSlots - 1}
+            className="text-muted-foreground disabled:opacity-20 hover:text-foreground"
+          >
+            <ChevronDown className="h-4 w-4" />
+          </button>
+        </div>
+        <p className="flex-1 font-medium text-sm">{slot.passenger.name}</p>
+        <button
+          type="button"
+          onClick={() => onRemove(slot.passenger.id)}
+          className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+        >
+          Remove
+        </button>
+      </div>
+
+      <div className="divide-y">
+        <div className="flex items-center gap-3 px-4 py-2.5">
+          <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-muted-foreground">Pick-up</p>
+            <p className="text-sm font-medium truncate">{slot.pickupLocationName}</p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => onSetPickerTarget({ slotIndex: index, field: "pickup" })}
+          >
+            Change
+          </Button>
+        </div>
+        <div className="flex items-center gap-3 px-4 py-2.5">
+          <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-muted-foreground">Drop-off</p>
+            {slot.dropoffLocationName ? (
+              <p className="text-sm font-medium truncate">{slot.dropoffLocationName}</p>
+            ) : (
+              <p className="text-sm text-muted-foreground">Not set</p>
+            )}
+          </div>
+          <Button
+            type="button"
+            variant={slot.dropoffLocationId ? "outline" : "default"}
+            size="sm"
+            onClick={() => onSetPickerTarget({ slotIndex: index, field: "dropoff" })}
+          >
+            {slot.dropoffLocationId ? "Change" : "Set"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function DrivePlanner({ passengers, locations, settings, onLocationsChange, onPassengersChange, initialDayDetail }: Props) {
   const [date, setDate] = useState(todayLocal)
   const [slots, setSlots] = useState<PassengerSlot[]>([])
@@ -337,6 +435,16 @@ export function DrivePlanner({ passengers, locations, settings, onLocationsChang
       ;[next[index], next[swap]] = [next[swap], next[index]]
       return next
     })
+  }
+
+  const sensors = useSensors(useSensor(PointerSensor))
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const oldIndex = slots.findIndex((s) => s.passenger.id === active.id)
+    const newIndex = slots.findIndex((s) => s.passenger.id === over.id)
+    setSlots((prev) => arrayMove(prev, oldIndex, newIndex))
   }
 
   function setPickerSelection(locationId: string, locationName: string) {
@@ -471,62 +579,23 @@ export function DrivePlanner({ passengers, locations, settings, onLocationsChang
       {slots.length > 0 && (
         <div className="space-y-2">
           <p className="text-sm font-medium">Trip order</p>
-          <div className="space-y-2">
-            {slots.map((slot, i) => (
-              <div key={slot.passenger.id} className="border rounded-lg overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2 bg-muted/30 border-b">
-                  <div className="flex flex-col gap-0.5 shrink-0">
-                    <button type="button" aria-label="Move up" onClick={() => moveSlot(i, -1)} disabled={i === 0} className="text-muted-foreground disabled:opacity-20 hover:text-foreground">
-                      <ChevronUp className="h-4 w-4" />
-                    </button>
-                    <button type="button" aria-label="Move down" onClick={() => moveSlot(i, 1)} disabled={i === slots.length - 1} className="text-muted-foreground disabled:opacity-20 hover:text-foreground">
-                      <ChevronDown className="h-4 w-4" />
-                    </button>
-                  </div>
-                  <p className="flex-1 font-medium text-sm">{slot.passenger.name}</p>
-                  <button
-                    type="button"
-                    onClick={() => removePassenger(slot.passenger.id)}
-                    className="text-xs text-muted-foreground hover:text-destructive transition-colors"
-                  >
-                    Remove
-                  </button>
-                </div>
-
-                <div className="divide-y">
-                  <div className="flex items-center gap-3 px-4 py-2.5">
-                    <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-muted-foreground">Pick-up</p>
-                      <p className="text-sm font-medium truncate">{slot.pickupLocationName}</p>
-                    </div>
-                    <Button type="button" variant="outline" size="sm" onClick={() => setPickerTarget({ slotIndex: i, field: "pickup" })}>
-                      Change
-                    </Button>
-                  </div>
-                  <div className="flex items-center gap-3 px-4 py-2.5">
-                    <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-muted-foreground">Drop-off</p>
-                      {slot.dropoffLocationName ? (
-                        <p className="text-sm font-medium truncate">{slot.dropoffLocationName}</p>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">Not set</p>
-                      )}
-                    </div>
-                    <Button
-                      type="button"
-                      variant={slot.dropoffLocationId ? "outline" : "default"}
-                      size="sm"
-                      onClick={() => setPickerTarget({ slotIndex: i, field: "dropoff" })}
-                    >
-                      {slot.dropoffLocationId ? "Change" : "Set"}
-                    </Button>
-                  </div>
-                </div>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={slots.map((s) => s.passenger.id)} strategy={verticalListSortingStrategy}>
+              <div className="space-y-2">
+                {slots.map((slot, i) => (
+                  <SortableSlotCard
+                    key={slot.passenger.id}
+                    slot={slot}
+                    index={i}
+                    totalSlots={slots.length}
+                    onMoveSlot={moveSlot}
+                    onRemove={removePassenger}
+                    onSetPickerTarget={setPickerTarget}
+                  />
+                ))}
               </div>
-            ))}
-          </div>
+            </SortableContext>
+          </DndContext>
         </div>
       )}
 

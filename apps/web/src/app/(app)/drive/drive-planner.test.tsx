@@ -1,5 +1,6 @@
+import React from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { DrivePlanner } from './drive-planner'
 import { api } from '@/lib/api/client'
 import type { Passenger, Location, AppSettings, DriveLegResult } from '@/lib/api/types'
@@ -35,6 +36,33 @@ vi.mock('./destination-picker', () => ({
 vi.mock('./drive-results-table', () => ({
   DriveResultsTable: () => <div data-testid="results-table" />,
 }))
+
+let capturedOnDragEnd: ((e: unknown) => void) | undefined
+
+vi.mock('@dnd-kit/core', () => ({
+  DndContext: ({ children, onDragEnd }: { children: React.ReactNode; onDragEnd: (e: unknown) => void }) => {
+    capturedOnDragEnd = onDragEnd
+    return children
+  },
+  closestCenter: {},
+  PointerSensor: class {},
+  useSensor: () => ({}),
+  useSensors: (...s: unknown[]) => s,
+}))
+
+vi.mock('@dnd-kit/sortable', () => ({
+  SortableContext: ({ children }: { children: React.ReactNode }) => children,
+  useSortable: () => ({ attributes: {}, listeners: {}, setNodeRef: () => {}, transform: null, transition: undefined }),
+  verticalListSortingStrategy: {},
+  arrayMove: (arr: unknown[], from: number, to: number) => {
+    const next = [...arr]
+    const [el] = next.splice(from, 1)
+    next.splice(to, 0, el)
+    return next
+  },
+}))
+
+vi.mock('@dnd-kit/utilities', () => ({ CSS: { Transform: { toString: () => '' } } }))
 
 const alice: Passenger = {
   id: 'p-alice',
@@ -164,6 +192,44 @@ describe('DrivePlanner — slot reordering', () => {
     const slotNameEls = screen.getAllByText(/Alice Smith|Bob Jones/).filter((el) => el.tagName === 'P')
     expect(slotNameEls[0]).toHaveTextContent('Bob Jones')
     expect(slotNameEls[1]).toHaveTextContent('Alice Smith')
+  })
+
+  it('renders a drag handle button for each slot', () => {
+    render(<DrivePlanner {...defaultProps} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Alice Smith' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Bob Jones' }))
+
+    const handles = screen.getAllByRole('button', { name: /drag to reorder/i })
+    expect(handles).toHaveLength(2)
+  })
+
+  it('reorders slots when drag ends on a different slot', async () => {
+    render(<DrivePlanner {...defaultProps} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Alice Smith' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Bob Jones' }))
+
+    // Fire drag end: move Bob (index 1) to Alice's position (index 0)
+    await act(async () => {
+      capturedOnDragEnd!({ active: { id: 'p-bob' }, over: { id: 'p-alice' } })
+    })
+
+    const slotNameEls = screen.getAllByText(/Alice Smith|Bob Jones/).filter((el) => el.tagName === 'P')
+    expect(slotNameEls[0]).toHaveTextContent('Bob Jones')
+    expect(slotNameEls[1]).toHaveTextContent('Alice Smith')
+  })
+
+  it('does not reorder when drag ends on same slot', async () => {
+    render(<DrivePlanner {...defaultProps} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Alice Smith' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Bob Jones' }))
+
+    await act(async () => {
+      capturedOnDragEnd!({ active: { id: 'p-alice' }, over: { id: 'p-alice' } })
+    })
+
+    const slotNameEls = screen.getAllByText(/Alice Smith|Bob Jones/).filter((el) => el.tagName === 'P')
+    expect(slotNameEls[0]).toHaveTextContent('Alice Smith')
+    expect(slotNameEls[1]).toHaveTextContent('Bob Jones')
   })
 })
 
