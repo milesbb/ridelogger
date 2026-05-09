@@ -14,6 +14,6 @@ export async function geocodeAddress(address: string): Promise<Coords> {
       address,
       error: err instanceof Error ? err.message : String(err),
     })
-    throw Errors.BadRequest("Could not geocode that address — please check it and try again.")
+    throw Errors.BadRequest("Could not locate that address — please check it and try again.")
   }
 }

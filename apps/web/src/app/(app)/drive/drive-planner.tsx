@@ -281,44 +281,49 @@ function SortableSlotCard({ slot, index, totalSlots, onMoveSlot, onRemove, onSet
 
   return (
     <div ref={setNodeRef} style={style} className="border rounded-lg overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-2 bg-muted/30 border-b">
-        <button
-          type="button"
-          aria-label="Drag to reorder"
-          className="text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing touch-none"
-          {...listeners}
-          {...attributes}
-        >
-          <GripVertical className="h-4 w-4" />
-        </button>
-        <div className="flex flex-col gap-0.5 shrink-0">
+      <div
+        className="bg-muted/30 border-b cursor-grab active:cursor-grabbing touch-none select-none"
+        {...listeners}
+        {...attributes}
+        aria-label="Drag to reorder"
+      >
+        <div className="flex justify-center pt-1.5 pb-0.5">
+          <GripVertical className="h-4 w-4 text-muted-foreground/60" />
+        </div>
+        <div className="flex items-center gap-2 px-4 py-2">
+          <div
+            className="flex flex-col gap-0.5 shrink-0"
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              aria-label="Move up"
+              onClick={() => onMoveSlot(index, -1)}
+              disabled={index === 0}
+              className="text-muted-foreground disabled:opacity-20 hover:text-foreground"
+            >
+              <ChevronUp className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              aria-label="Move down"
+              onClick={() => onMoveSlot(index, 1)}
+              disabled={index === totalSlots - 1}
+              className="text-muted-foreground disabled:opacity-20 hover:text-foreground"
+            >
+              <ChevronDown className="h-4 w-4" />
+            </button>
+          </div>
+          <p className="flex-1 font-medium text-sm">{slot.passenger.name}</p>
           <button
             type="button"
-            aria-label="Move up"
-            onClick={() => onMoveSlot(index, -1)}
-            disabled={index === 0}
-            className="text-muted-foreground disabled:opacity-20 hover:text-foreground"
+            onClick={() => onRemove(slot.passenger.id)}
+            onPointerDown={(e) => e.stopPropagation()}
+            className="text-xs text-muted-foreground hover:text-destructive transition-colors"
           >
-            <ChevronUp className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            aria-label="Move down"
-            onClick={() => onMoveSlot(index, 1)}
-            disabled={index === totalSlots - 1}
-            className="text-muted-foreground disabled:opacity-20 hover:text-foreground"
-          >
-            <ChevronDown className="h-4 w-4" />
+            Remove
           </button>
         </div>
-        <p className="flex-1 font-medium text-sm">{slot.passenger.name}</p>
-        <button
-          type="button"
-          onClick={() => onRemove(slot.passenger.id)}
-          className="text-xs text-muted-foreground hover:text-destructive transition-colors"
-        >
-          Remove
-        </button>
       </div>
 
       <div className="divide-y">

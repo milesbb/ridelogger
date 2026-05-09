@@ -52,7 +52,7 @@ vi.mock('@dnd-kit/core', () => ({
 
 vi.mock('@dnd-kit/sortable', () => ({
   SortableContext: ({ children }: { children: React.ReactNode }) => children,
-  useSortable: () => ({ attributes: {}, listeners: {}, setNodeRef: () => {}, transform: null, transition: undefined }),
+  useSortable: () => ({ attributes: { role: 'button', tabIndex: 0 }, listeners: {}, setNodeRef: () => {}, transform: null, transition: undefined }),
   verticalListSortingStrategy: {},
   arrayMove: (arr: unknown[], from: number, to: number) => {
     const next = [...arr]
