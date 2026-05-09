@@ -282,15 +282,15 @@ function SortableSlotCard({ slot, index, totalSlots, onMoveSlot, onRemove, onSet
   return (
     <div ref={setNodeRef} style={style} className="border rounded-lg overflow-hidden">
       <div
-        className="bg-muted/30 border-b cursor-grab active:cursor-grabbing touch-none select-none"
+        className="relative bg-muted/30 border-b cursor-grab active:cursor-grabbing touch-none select-none"
         {...listeners}
         {...attributes}
         aria-label="Drag to reorder"
       >
-        <div className="flex justify-center pt-1.5 pb-1">
+        <div className="absolute top-1.5 inset-x-0 flex justify-center">
           <div className="w-8 h-1 rounded-full bg-muted-foreground/30" />
         </div>
-        <div className="flex items-center gap-2 px-4 py-2">
+        <div className="flex items-center gap-2 px-4 pt-4 pb-2">
           <div
             className="flex flex-col gap-0.5 shrink-0"
             onPointerDown={(e) => e.stopPropagation()}
