@@ -1,15 +1,8 @@
 import type { Page } from '@playwright/test'
 
 // Injects a fake token before React hydrates so AuthContext finds it in
-// sessionStorage immediately and skips the refresh call. Also sets the
-// refreshToken cookie so the Next.js middleware allows the page through.
+// sessionStorage immediately and skips the refresh call.
 export async function authenticatePage(page: Page): Promise<void> {
-  await page.context().addCookies([{
-    name: 'refreshToken',
-    value: 'fake-token',
-    url: 'http://localhost:3000',
-    httpOnly: true,
-  }])
   await page.addInitScript(() => {
     sessionStorage.setItem('accessToken', 'test-token')
   })
