@@ -103,10 +103,42 @@ describe('DriveCalendar — navigation', () => {
     expect(screen.getByText('January 2027')).toBeInTheDocument()
   })
 
-  it('changes month when the month picker input changes', () => {
+  it('opens the month picker when Pick month is clicked', () => {
     render(<DriveCalendar days={[]} onDayClick={onDayClick} />)
-    const input = document.querySelector('input[type="month"]') as HTMLInputElement
-    fireEvent.change(input, { target: { value: '2026-08' } })
+    fireEvent.click(screen.getByRole('button', { name: /pick month/i }))
+    expect(screen.getByText('Jan')).toBeInTheDocument()
+    expect(screen.getByText('Dec')).toBeInTheDocument()
+  })
+
+  it('selects a month from the picker and closes it', () => {
+    render(<DriveCalendar days={[]} onDayClick={onDayClick} />)
+    fireEvent.click(screen.getByRole('button', { name: /pick month/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Aug' }))
     expect(screen.getByText('August 2026')).toBeInTheDocument()
+    expect(screen.queryByText('Jan')).not.toBeInTheDocument()
+  })
+
+  it('changes year inside the picker without affecting the calendar until a month is selected', () => {
+    render(<DriveCalendar days={[]} onDayClick={onDayClick} />)
+    fireEvent.click(screen.getByRole('button', { name: /pick month/i }))
+    fireEvent.click(screen.getByRole('button', { name: /next year/i }))
+    expect(screen.getByText('2027')).toBeInTheDocument()
+    expect(screen.getByText('May 2026')).toBeInTheDocument()
+  })
+
+  it('navigates to the selected year and month on confirm', () => {
+    render(<DriveCalendar days={[]} onDayClick={onDayClick} />)
+    fireEvent.click(screen.getByRole('button', { name: /pick month/i }))
+    fireEvent.click(screen.getByRole('button', { name: /next year/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Mar' }))
+    expect(screen.getByText('March 2027')).toBeInTheDocument()
+  })
+
+  it('closes the picker when clicking outside', () => {
+    render(<DriveCalendar days={[]} onDayClick={onDayClick} />)
+    fireEvent.click(screen.getByRole('button', { name: /pick month/i }))
+    expect(screen.getByText('Jan')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('picker-backdrop'))
+    expect(screen.queryByText('Jan')).not.toBeInTheDocument()
   })
 })

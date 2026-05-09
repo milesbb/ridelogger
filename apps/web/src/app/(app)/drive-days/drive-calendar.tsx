@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { buildCalendarGrid, formatMonthLabel, groupByIsoDate } from "./calendar-utils"
@@ -12,6 +12,7 @@ interface Props {
 }
 
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
 function formatDayLabel(day: DriveDaySummary): string {
   return day.passenger_names.length > 0 ? day.passenger_names.join(", ") : "No passengers"
@@ -29,7 +30,8 @@ export function DriveCalendar({ days, onDayClick }: Props) {
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth())
-  const monthInputRef = useRef<HTMLInputElement>(null)
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [pickerYear, setPickerYear] = useState(now.getFullYear())
 
   const grid = buildCalendarGrid(year, month)
   const drivesByDate = groupByIsoDate(days)
@@ -46,10 +48,15 @@ export function DriveCalendar({ days, onDayClick }: Props) {
     setMonth(m.month)
   }
 
-  function handleMonthPickerChange(value: string) {
-    const [y, m] = value.split("-").map(Number)
-    setYear(y)
-    setMonth(m - 1)
+  function openPicker() {
+    setPickerYear(year)
+    setPickerOpen(true)
+  }
+
+  function selectMonth(m: number) {
+    setYear(pickerYear)
+    setMonth(m)
+    setPickerOpen(false)
   }
 
   return (
@@ -66,18 +73,66 @@ export function DriveCalendar({ days, onDayClick }: Props) {
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
-        <label className="cursor-pointer">
-          <Button variant="outline" size="sm" asChild>
-            <span>Pick month</span>
+
+        <div className="relative">
+          <Button variant="outline" size="sm" onClick={openPicker}>
+            Pick month
           </Button>
-          <input
-            ref={monthInputRef}
-            type="month"
-            value={`${year}-${String(month + 1).padStart(2, "0")}`}
-            onChange={(e) => { if (e.target.value) handleMonthPickerChange(e.target.value) }}
-            className="sr-only"
-          />
-        </label>
+
+          {pickerOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setPickerOpen(false)}
+                aria-hidden="true"
+                data-testid="picker-backdrop"
+              />
+              <div className="absolute right-0 top-full mt-1 z-50 bg-background border rounded-lg shadow-lg p-3 w-52">
+                <div className="flex items-center justify-between mb-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => setPickerYear((y) => y - 1)}
+                    aria-label="Previous year"
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                  </Button>
+                  <span className="text-sm font-semibold">{pickerYear}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => setPickerYear((y) => y + 1)}
+                    aria-label="Next year"
+                  >
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+                <div className="grid grid-cols-3 gap-1">
+                  {MONTH_SHORT.map((name, idx) => {
+                    const isSelected = pickerYear === year && idx === month
+                    return (
+                      <button
+                        key={name}
+                        type="button"
+                        onClick={() => selectMonth(idx)}
+                        className={[
+                          "text-xs rounded py-1.5 transition-colors",
+                          isSelected
+                            ? "bg-primary text-primary-foreground font-medium"
+                            : "hover:bg-accent",
+                        ].join(" ")}
+                      >
+                        {name}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="border rounded-lg overflow-hidden">
