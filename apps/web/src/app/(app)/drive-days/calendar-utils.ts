@@ -26,9 +26,10 @@ export function buildCalendarGrid(year: number, month: number): CalendarCell[][]
     cells.push({ isoDate: iso, dayOfMonth: d, isCurrentMonth: true, isWeekend: col === 5 || col === 6 })
   }
 
-  const remaining = 42 - cells.length
+  const baseLength = cells.length
+  const remaining = 42 - baseLength
   for (let d = 1; d <= remaining; d++) {
-    const col = (cells.length + d - 1) % 7
+    const col = (baseLength + d - 1) % 7
     cells.push({ isoDate: null, dayOfMonth: d, isCurrentMonth: false, isWeekend: col === 5 || col === 6 })
   }
 
