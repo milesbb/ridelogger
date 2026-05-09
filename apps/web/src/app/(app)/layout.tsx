@@ -2,14 +2,26 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { Menu, X } from "lucide-react"
 import { useAuth } from "@/context/AuthContext"
+import { cn } from "@/lib/utils"
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { accessToken, isLoading, logout } = useAuth()
   const router = useRouter()
+  const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
+
+  function navClass(href: string): string {
+    const active = href === "/drive" ? pathname === "/drive" : pathname.startsWith(href)
+    return cn(
+      "transition-colors",
+      active
+        ? "text-foreground font-medium underline underline-offset-4"
+        : "text-muted-foreground hover:text-foreground"
+    )
+  }
 
   useEffect(() => {
     if (!isLoading && !accessToken) {
@@ -46,19 +58,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </button>
 
           <div className="hidden md:flex items-center gap-4 text-sm">
-            <Link href="/drive" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="/drive" className={navClass("/drive")}>
               New Drive Day
             </Link>
-            <Link href="/drive-days" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="/drive-days" className={navClass("/drive-days")}>
               Drive Log
             </Link>
-            <Link href="/passengers" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="/passengers" className={navClass("/passengers")}>
               Passengers
             </Link>
-            <Link href="/locations" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="/locations" className={navClass("/locations")}>
               Locations
             </Link>
-            <Link href="/settings" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="/settings" className={navClass("/settings")}>
               Settings
             </Link>
             <button
@@ -73,19 +85,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {menuOpen && (
           <div className="md:hidden border-t bg-background">
             <div className="max-w-2xl mx-auto px-4 py-1 flex flex-col text-sm">
-              <Link href="/drive" onClick={closeMenu} className="py-3 border-b text-muted-foreground hover:text-foreground transition-colors">
+              <Link href="/drive" onClick={closeMenu} className={cn("py-3 border-b", navClass("/drive"))}>
                 New Drive Day
               </Link>
-              <Link href="/drive-days" onClick={closeMenu} className="py-3 border-b text-muted-foreground hover:text-foreground transition-colors">
+              <Link href="/drive-days" onClick={closeMenu} className={cn("py-3 border-b", navClass("/drive-days"))}>
                 Drive Log
               </Link>
-              <Link href="/passengers" onClick={closeMenu} className="py-3 border-b text-muted-foreground hover:text-foreground transition-colors">
+              <Link href="/passengers" onClick={closeMenu} className={cn("py-3 border-b", navClass("/passengers"))}>
                 Passengers
               </Link>
-              <Link href="/locations" onClick={closeMenu} className="py-3 border-b text-muted-foreground hover:text-foreground transition-colors">
+              <Link href="/locations" onClick={closeMenu} className={cn("py-3 border-b", navClass("/locations"))}>
                 Locations
               </Link>
-              <Link href="/settings" onClick={closeMenu} className="py-3 border-b text-muted-foreground hover:text-foreground transition-colors">
+              <Link href="/settings" onClick={closeMenu} className={cn("py-3 border-b", navClass("/settings"))}>
                 Settings
               </Link>
               <button
