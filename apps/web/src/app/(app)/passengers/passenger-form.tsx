@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { AddressFields, assembleAddress, parseAustralianAddress, type AustralianAddress } from "@/components/address-fields"
 import { api } from "@/lib/api/client"
+import { useHomeState } from "@/lib/useHomeState"
 import type { Passenger, Location } from "@/lib/api/types"
 
 interface Props {
@@ -15,12 +16,20 @@ interface Props {
 type HomeEditMode = "none" | "edit" | "switch"
 
 export function PassengerForm({ existing, onDone }: Props) {
+  const homeState = useHomeState()
   const [name, setName] = useState(existing?.name ?? "")
   const [notes, setNotes] = useState(existing?.notes ?? "")
   const [homeEditMode, setHomeEditMode] = useState<HomeEditMode>("none")
   const [editAddress, setEditAddress] = useState<AustralianAddress>(() =>
     parseAustralianAddress(existing?.home_address ?? "")
   )
+
+  const isNew = !existing
+  useEffect(() => {
+    if (isNew && homeState) {
+      setEditAddress(prev => prev.state ? prev : { ...prev, state: homeState })
+    }
+  }, [homeState, isNew])
   const [switchLocationId, setSwitchLocationId] = useState<string | null>(null)
   const [locations, setLocations] = useState<Location[]>([])
   const [loadingLocations, setLoadingLocations] = useState(false)

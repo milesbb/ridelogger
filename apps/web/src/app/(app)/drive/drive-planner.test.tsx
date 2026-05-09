@@ -259,7 +259,7 @@ describe('DrivePlanner — calculate flow', () => {
     expect(legs).toHaveLength(4)
     expect(legs[0]).toMatchObject({ fromLocationId: 'loc-home', toLocationId: 'loc-alice-home', passengerLeg: false })
     expect(legs[1]).toMatchObject({ fromLocationId: 'loc-alice-home', toLocationId: 'loc-drop-1', passengerLeg: true })
-    expect(legs[2]).toMatchObject({ fromLocationId: 'loc-drop-1', toLocationId: 'loc-alice-home', passengerLeg: false })
+    expect(legs[2]).toMatchObject({ fromLocationId: 'loc-drop-1', toLocationId: 'loc-alice-home', passengerLeg: true })
     expect(legs[3]).toMatchObject({ fromLocationId: 'loc-alice-home', toLocationId: 'loc-home', passengerLeg: false })
   })
 

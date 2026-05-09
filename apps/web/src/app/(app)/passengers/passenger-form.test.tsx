@@ -13,6 +13,9 @@ vi.mock('@/lib/api/client', () => ({
     locations: {
       list: vi.fn(),
     },
+    settings: {
+      get: vi.fn().mockResolvedValue(null),
+    },
   },
 }))
 
@@ -119,6 +122,21 @@ describe('PassengerForm — create mode', () => {
 
     await waitFor(() => expect(screen.getByRole('button', { name: /saving/i })).toBeDisabled())
     resolve!(existing)
+  })
+
+  it('pre-fills state from home settings when creating a new passenger', async () => {
+    vi.mocked(api.settings.get).mockResolvedValue({
+      id: 'set-1',
+      user_id: 'u1',
+      home_location_id: 'loc-1',
+      home_address: '1 Home St, Suburb NSW 2000',
+      home_lat: null,
+      home_lon: null,
+      created_at: '',
+      updated_at: '',
+    })
+    render(<PassengerForm onDone={onDone} />)
+    await waitFor(() => expect(screen.getByLabelText(/state/i)).toHaveValue('NSW'))
   })
 })
 

@@ -29,36 +29,49 @@ const existingSettings: AppSettings = {
   updated_at: '',
 }
 
+function fillAddress(street: string, suburb: string, state: string, postcode: string) {
+  fireEvent.change(screen.getByLabelText(/street address/i), { target: { value: street } })
+  fireEvent.change(screen.getByLabelText(/suburb/i), { target: { value: suburb } })
+  fireEvent.change(screen.getByLabelText(/state/i), { target: { value: state } })
+  fireEvent.change(screen.getByLabelText(/postcode/i), { target: { value: postcode } })
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   mockPush.mockReset()
 })
 
 describe('SettingsForm — rendering', () => {
-  it('renders the home address input', () => {
+  it('renders the home address fields', () => {
     render(<SettingsForm existing={null} />)
-    expect(screen.getByLabelText(/your home address/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/street address/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/suburb/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/state/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/postcode/i)).toBeInTheDocument()
   })
 
-  it('pre-fills address when existing settings are provided', () => {
+  it('pre-fills address fields when existing settings are provided', () => {
     render(<SettingsForm existing={existingSettings} />)
-    expect(screen.getByLabelText(/your home address/i)).toHaveValue('10 Home St, Suburb VIC 3000')
+    expect(screen.getByLabelText(/street address/i)).toHaveValue('10 Home St')
+    expect(screen.getByLabelText(/suburb/i)).toHaveValue('Suburb')
+    expect(screen.getByLabelText(/state/i)).toHaveValue('VIC')
+    expect(screen.getByLabelText(/postcode/i)).toHaveValue('3000')
   })
 
-  it('starts with empty address when no existing settings', () => {
+  it('starts with empty address fields when no existing settings', () => {
     render(<SettingsForm existing={null} />)
-    expect(screen.getByLabelText(/your home address/i)).toHaveValue('')
+    expect(screen.getByLabelText(/street address/i)).toHaveValue('')
+    expect(screen.getByLabelText(/suburb/i)).toHaveValue('')
+    expect(screen.getByLabelText(/postcode/i)).toHaveValue('')
   })
 })
 
 describe('SettingsForm — submit', () => {
-  it('calls api.settings.save with the entered address', async () => {
+  it('calls api.settings.save with the assembled address', async () => {
     vi.mocked(api.settings.save).mockResolvedValue(existingSettings)
     render(<SettingsForm existing={null} />)
 
-    fireEvent.change(screen.getByLabelText(/your home address/i), {
-      target: { value: '42 New Rd, Suburb VIC 3000' },
-    })
+    fillAddress('42 New Rd', 'Suburb', 'VIC', '3000')
     fireEvent.submit(screen.getByRole('button', { name: /save/i }).closest('form')!)
 
     await waitFor(() =>
@@ -70,9 +83,7 @@ describe('SettingsForm — submit', () => {
     vi.mocked(api.settings.save).mockResolvedValue(existingSettings)
     render(<SettingsForm existing={null} />)
 
-    fireEvent.change(screen.getByLabelText(/your home address/i), {
-      target: { value: '1 Main St' },
-    })
+    fillAddress('1 Main St', 'Suburb', 'VIC', '3000')
     fireEvent.submit(screen.getByRole('button', { name: /save/i }).closest('form')!)
 
     await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/drive'))
@@ -82,9 +93,7 @@ describe('SettingsForm — submit', () => {
     vi.mocked(api.settings.save).mockRejectedValue(new Error('Address not found'))
     render(<SettingsForm existing={null} />)
 
-    fireEvent.change(screen.getByLabelText(/your home address/i), {
-      target: { value: 'xyz' },
-    })
+    fillAddress('xyz', 'Suburb', 'VIC', '3000')
     fireEvent.submit(screen.getByRole('button', { name: /save/i }).closest('form')!)
 
     await waitFor(() => expect(screen.getByText('Address not found')).toBeInTheDocument())
@@ -96,9 +105,7 @@ describe('SettingsForm — submit', () => {
     vi.mocked(api.settings.save).mockReturnValue(new Promise((r) => { resolve = r }))
     render(<SettingsForm existing={null} />)
 
-    fireEvent.change(screen.getByLabelText(/your home address/i), {
-      target: { value: '1 Main St' },
-    })
+    fillAddress('1 Main St', 'Suburb', 'VIC', '3000')
     fireEvent.submit(screen.getByRole('button', { name: /save/i }).closest('form')!)
 
     await waitFor(() => expect(screen.getByRole('button', { name: /saving/i })).toBeDisabled())

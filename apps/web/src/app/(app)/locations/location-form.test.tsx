@@ -10,6 +10,9 @@ vi.mock('@/lib/api/client', () => ({
       create: vi.fn(),
       update: vi.fn(),
     },
+    settings: {
+      get: vi.fn().mockResolvedValue(null),
+    },
   },
 }))
 
@@ -116,6 +119,36 @@ describe('LocationForm — create mode', () => {
     render(<LocationForm prefillAddress="Some unparseable string" onDone={onDone} />)
     expect(screen.getByLabelText(/street address/i)).toHaveValue('Some unparseable string')
     expect(screen.getByLabelText(/suburb/i)).toHaveValue('')
+  })
+
+  it('pre-fills state from home settings when creating a new location', async () => {
+    vi.mocked(api.settings.get).mockResolvedValue({
+      id: 'set-1',
+      user_id: 'u1',
+      home_location_id: 'loc-1',
+      home_address: '1 Home St, Suburb QLD 4000',
+      home_lat: null,
+      home_lon: null,
+      created_at: '',
+      updated_at: '',
+    })
+    render(<LocationForm onDone={onDone} />)
+    await waitFor(() => expect(screen.getByLabelText(/state/i)).toHaveValue('QLD'))
+  })
+
+  it('does not override state from prefillAddress with home state', async () => {
+    vi.mocked(api.settings.get).mockResolvedValue({
+      id: 'set-1',
+      user_id: 'u1',
+      home_location_id: 'loc-1',
+      home_address: '1 Home St, Suburb QLD 4000',
+      home_lat: null,
+      home_lon: null,
+      created_at: '',
+      updated_at: '',
+    })
+    render(<LocationForm prefillAddress="41 Victoria Parade, Fitzroy VIC 3065" onDone={onDone} />)
+    await waitFor(() => expect(screen.getByLabelText(/state/i)).toHaveValue('VIC'))
   })
 })
 
