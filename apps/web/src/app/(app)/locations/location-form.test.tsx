@@ -26,6 +26,13 @@ const existing: Location = {
   updated_at: '',
 }
 
+function fillAddress(street: string, suburb: string, state: string, postcode: string) {
+  fireEvent.change(screen.getByLabelText(/street address/i), { target: { value: street } })
+  fireEvent.change(screen.getByLabelText(/suburb/i), { target: { value: suburb } })
+  fireEvent.change(screen.getByLabelText(/state/i), { target: { value: state } })
+  fireEvent.change(screen.getByLabelText(/postcode/i), { target: { value: postcode } })
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   onDone.mockReset()
@@ -35,7 +42,10 @@ describe('LocationForm — create mode', () => {
   it('renders name and address fields', () => {
     render(<LocationForm onDone={onDone} />)
     expect(screen.getByLabelText(/name/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/address/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/street address/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/suburb/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/state/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/postcode/i)).toBeInTheDocument()
   })
 
   it('shows Add location submit button', () => {
@@ -43,18 +53,18 @@ describe('LocationForm — create mode', () => {
     expect(screen.getByRole('button', { name: /add location/i })).toBeInTheDocument()
   })
 
-  it('calls api.locations.create with entered values on submit', async () => {
+  it('calls api.locations.create with assembled address on submit', async () => {
     vi.mocked(api.locations.create).mockResolvedValue(existing)
     render(<LocationForm onDone={onDone} />)
 
-    fireEvent.change(screen.getByLabelText(/name/i), { target: { value: "St Vincent's Hospital" } })
-    fireEvent.change(screen.getByLabelText(/address/i), { target: { value: '41 Victoria Parade' } })
+    fireEvent.change(screen.getByLabelText(/^name/i), { target: { value: "St Vincent's Hospital" } })
+    fillAddress('41 Victoria Parade', 'Fitzroy', 'VIC', '3065')
     fireEvent.submit(screen.getByRole('button', { name: /add location/i }).closest('form')!)
 
     await waitFor(() =>
       expect(vi.mocked(api.locations.create)).toHaveBeenCalledWith({
         name: "St Vincent's Hospital",
-        address: '41 Victoria Parade',
+        address: '41 Victoria Parade, Fitzroy VIC 3065',
       })
     )
   })
@@ -63,8 +73,8 @@ describe('LocationForm — create mode', () => {
     vi.mocked(api.locations.create).mockResolvedValue(existing)
     render(<LocationForm onDone={onDone} />)
 
-    fireEvent.change(screen.getByLabelText(/name/i), { target: { value: 'Anywhere' } })
-    fireEvent.change(screen.getByLabelText(/address/i), { target: { value: '1 Some St' } })
+    fireEvent.change(screen.getByLabelText(/^name/i), { target: { value: 'Anywhere' } })
+    fillAddress('1 Some St', 'Carlton', 'VIC', '3053')
     fireEvent.submit(screen.getByRole('button', { name: /add location/i }).closest('form')!)
 
     await waitFor(() => expect(onDone).toHaveBeenCalledWith(existing))
@@ -74,8 +84,8 @@ describe('LocationForm — create mode', () => {
     vi.mocked(api.locations.create).mockRejectedValue(new Error('Address not found'))
     render(<LocationForm onDone={onDone} />)
 
-    fireEvent.change(screen.getByLabelText(/name/i), { target: { value: 'X' } })
-    fireEvent.change(screen.getByLabelText(/address/i), { target: { value: 'nowhere' } })
+    fireEvent.change(screen.getByLabelText(/^name/i), { target: { value: 'X' } })
+    fillAddress('1 X St', 'Suburb', 'NSW', '2000')
     fireEvent.submit(screen.getByRole('button', { name: /add location/i }).closest('form')!)
 
     await waitFor(() => expect(screen.getByText('Address not found')).toBeInTheDocument())
@@ -87,17 +97,25 @@ describe('LocationForm — create mode', () => {
     vi.mocked(api.locations.create).mockReturnValue(new Promise((r) => { resolve = r }))
     render(<LocationForm onDone={onDone} />)
 
-    fireEvent.change(screen.getByLabelText(/name/i), { target: { value: 'X' } })
-    fireEvent.change(screen.getByLabelText(/address/i), { target: { value: '1 X St' } })
+    fireEvent.change(screen.getByLabelText(/^name/i), { target: { value: 'X' } })
+    fillAddress('1 X St', 'Suburb', 'NSW', '2000')
     fireEvent.submit(screen.getByRole('button', { name: /add location/i }).closest('form')!)
 
     await waitFor(() => expect(screen.getByRole('button', { name: /saving/i })).toBeDisabled())
     resolve!(existing)
   })
 
-  it('pre-fills address from prefillAddress prop', () => {
-    render(<LocationForm prefillAddress="42 Pre-filled Rd" onDone={onDone} />)
-    expect(screen.getByLabelText(/address/i)).toHaveValue('42 Pre-filled Rd')
+  it('pre-fills street field from prefillAddress when address is parseable', () => {
+    render(<LocationForm prefillAddress="41 Victoria Parade, Fitzroy VIC 3065" onDone={onDone} />)
+    expect(screen.getByLabelText(/street address/i)).toHaveValue('41 Victoria Parade')
+    expect(screen.getByLabelText(/suburb/i)).toHaveValue('Fitzroy')
+    expect(screen.getByLabelText(/postcode/i)).toHaveValue('3065')
+  })
+
+  it('pre-fills street field from prefillAddress for unparseable input', () => {
+    render(<LocationForm prefillAddress="Some unparseable string" onDone={onDone} />)
+    expect(screen.getByLabelText(/street address/i)).toHaveValue('Some unparseable string')
+    expect(screen.getByLabelText(/suburb/i)).toHaveValue('')
   })
 })
 
@@ -110,15 +128,17 @@ describe('LocationForm — edit mode', () => {
 
   it('pre-fills name and address fields with existing values', () => {
     render(<LocationForm existing={existing} onDone={onDone} />)
-    expect(screen.getByLabelText(/name/i)).toHaveValue(existing.name)
-    expect(screen.getByLabelText(/address/i)).toHaveValue(existing.address)
+    expect(screen.getByLabelText(/^name/i)).toHaveValue(existing.name)
+    expect(screen.getByLabelText(/street address/i)).toHaveValue('41 Victoria Parade')
+    expect(screen.getByLabelText(/suburb/i)).toHaveValue('Fitzroy')
+    expect(screen.getByLabelText(/postcode/i)).toHaveValue('3065')
   })
 
-  it('calls api.locations.update with edited values on submit', async () => {
+  it('calls api.locations.update with assembled address on submit', async () => {
     vi.mocked(api.locations.update).mockResolvedValue(existing)
     render(<LocationForm existing={existing} onDone={onDone} />)
 
-    fireEvent.change(screen.getByLabelText(/name/i), { target: { value: 'Royal Melbourne' } })
+    fireEvent.change(screen.getByLabelText(/^name/i), { target: { value: 'Royal Melbourne' } })
     fireEvent.submit(screen.getByRole('button', { name: /save changes/i }).closest('form')!)
 
     await waitFor(() =>

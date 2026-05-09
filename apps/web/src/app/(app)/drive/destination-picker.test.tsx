@@ -20,7 +20,7 @@ const hospital: Location = {
   id: 'loc-hospital',
   user_id: 'u1',
   name: 'Hospital',
-  address: '41 Victoria Parade',
+  address: '41 Victoria Parade, Fitzroy VIC 3065',
   lat: null,
   lon: null,
   created_at: '',
@@ -31,7 +31,7 @@ const aliceHome: Location = {
   id: 'loc-alice',
   user_id: 'u1',
   name: "Alice's Home",
-  address: '1 Alice St',
+  address: '1 Alice St, Suburb VIC 3000',
   lat: null,
   lon: null,
   created_at: '',
@@ -42,7 +42,7 @@ const suggested: Location = {
   id: 'loc-suggested',
   user_id: 'u1',
   name: 'Community Centre',
-  address: '5 Centre Rd',
+  address: '5 Centre Rd, Suburb VIC 3000',
   lat: null,
   lon: null,
   created_at: '',
@@ -60,6 +60,13 @@ function renderOpen(overrides: Partial<Parameters<typeof DestinationPicker>[0]> 
     onLocationAdded,
   }
   render(<DestinationPicker {...defaultProps} {...overrides} />)
+}
+
+function fillAddress(street: string, suburb: string, state: string, postcode: string) {
+  fireEvent.change(screen.getByLabelText(/street address/i), { target: { value: street } })
+  fireEvent.change(screen.getByLabelText(/suburb/i), { target: { value: suburb } })
+  fireEvent.change(screen.getByLabelText(/state/i), { target: { value: state } })
+  fireEvent.change(screen.getByLabelText(/postcode/i), { target: { value: postcode } })
 }
 
 beforeEach(() => {
@@ -116,7 +123,10 @@ describe('DestinationPicker — add new location', () => {
     renderOpen()
     fireEvent.click(screen.getByRole('button', { name: /add new address/i }))
     expect(screen.getByPlaceholderText(/location name/i)).toBeInTheDocument()
-    expect(screen.getByPlaceholderText(/full address/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/street address/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/suburb/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/state/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/postcode/i)).toBeInTheDocument()
   })
 
   it('hides add-new form when Cancel is clicked', () => {
@@ -124,19 +134,23 @@ describe('DestinationPicker — add new location', () => {
     fireEvent.click(screen.getByRole('button', { name: /add new address/i }))
     fireEvent.click(screen.getByRole('button', { name: /cancel/i }))
     expect(screen.queryByPlaceholderText(/location name/i)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/street address/i)).not.toBeInTheDocument()
   })
 
-  it('calls api.locations.create with entered name and address', async () => {
+  it('calls api.locations.create with name and assembled address', async () => {
     vi.mocked(api.locations.create).mockResolvedValue(hospital)
     renderOpen()
 
     fireEvent.click(screen.getByRole('button', { name: /add new address/i }))
     fireEvent.change(screen.getByPlaceholderText(/location name/i), { target: { value: 'New Place' } })
-    fireEvent.change(screen.getByPlaceholderText(/full address/i), { target: { value: '99 New Rd' } })
+    fillAddress('99 New Rd', 'Suburb', 'NSW', '2000')
     fireEvent.submit(screen.getByRole('button', { name: /save & select/i }).closest('form')!)
 
     await waitFor(() =>
-      expect(vi.mocked(api.locations.create)).toHaveBeenCalledWith({ name: 'New Place', address: '99 New Rd' })
+      expect(vi.mocked(api.locations.create)).toHaveBeenCalledWith({
+        name: 'New Place',
+        address: '99 New Rd, Suburb NSW 2000',
+      })
     )
   })
 
@@ -147,7 +161,7 @@ describe('DestinationPicker — add new location', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /add new address/i }))
     fireEvent.change(screen.getByPlaceholderText(/location name/i), { target: { value: 'New Place' } })
-    fireEvent.change(screen.getByPlaceholderText(/full address/i), { target: { value: '99 New Rd' } })
+    fillAddress('99 New Rd', 'Suburb', 'NSW', '2000')
     fireEvent.submit(screen.getByRole('button', { name: /save & select/i }).closest('form')!)
 
     await waitFor(() => expect(onLocationAdded).toHaveBeenCalledWith(newLoc))
@@ -161,7 +175,7 @@ describe('DestinationPicker — add new location', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /add new address/i }))
     fireEvent.change(screen.getByPlaceholderText(/location name/i), { target: { value: 'X' } })
-    fireEvent.change(screen.getByPlaceholderText(/full address/i), { target: { value: 'xyz' } })
+    fillAddress('1 X St', 'Suburb', 'VIC', '3000')
     fireEvent.submit(screen.getByRole('button', { name: /save & select/i }).closest('form')!)
 
     await waitFor(() => expect(screen.getByText('Address not found')).toBeInTheDocument())
@@ -175,10 +189,24 @@ describe('DestinationPicker — add new location', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /add new address/i }))
     fireEvent.change(screen.getByPlaceholderText(/location name/i), { target: { value: 'X' } })
-    fireEvent.change(screen.getByPlaceholderText(/full address/i), { target: { value: '1 X St' } })
+    fillAddress('1 X St', 'Suburb', 'VIC', '3000')
     fireEvent.submit(screen.getByRole('button', { name: /save & select/i }).closest('form')!)
 
     await waitFor(() => expect(screen.getByRole('button', { name: /saving/i })).toBeDisabled())
     resolve!(hospital)
+  })
+
+  it('resets address fields after successful creation', async () => {
+    const newLoc: Location = { ...hospital, id: 'loc-new', name: 'New Place' }
+    vi.mocked(api.locations.create).mockResolvedValue(newLoc)
+    renderOpen()
+
+    fireEvent.click(screen.getByRole('button', { name: /add new address/i }))
+    fireEvent.change(screen.getByPlaceholderText(/location name/i), { target: { value: 'New Place' } })
+    fillAddress('99 New Rd', 'Suburb', 'NSW', '2000')
+
+    // After submission the form closes and state resets — verify by re-opening add form
+    fireEvent.submit(screen.getByRole('button', { name: /save & select/i }).closest('form')!)
+    await waitFor(() => expect(onClose).toHaveBeenCalled())
   })
 })

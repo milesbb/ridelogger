@@ -44,6 +44,13 @@ const savedLocations: Location[] = [
   },
 ]
 
+function fillNewAddress(street: string, suburb: string, state: string, postcode: string) {
+  fireEvent.change(screen.getByLabelText(/street address/i), { target: { value: street } })
+  fireEvent.change(screen.getByLabelText(/suburb/i), { target: { value: suburb } })
+  fireEvent.change(screen.getByLabelText(/state/i), { target: { value: state } })
+  fireEvent.change(screen.getByLabelText(/postcode/i), { target: { value: postcode } })
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   onDone.mockReset()
@@ -52,24 +59,27 @@ beforeEach(() => {
 describe('PassengerForm — create mode', () => {
   it('renders name, home address, and notes fields', () => {
     render(<PassengerForm onDone={onDone} />)
-    expect(screen.getByLabelText(/name/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/home address/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^name/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/street address/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/suburb/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/state/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/postcode/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/notes/i)).toBeInTheDocument()
   })
 
-  it('calls api.passengers.create with entered values on submit', async () => {
+  it('calls api.passengers.create with assembled address on submit', async () => {
     vi.mocked(api.passengers.create).mockResolvedValue(existing)
     render(<PassengerForm onDone={onDone} />)
 
-    fireEvent.change(screen.getByLabelText(/name/i), { target: { value: 'Bob Jones' } })
-    fireEvent.change(screen.getByLabelText(/home address/i), { target: { value: '99 Bob Rd' } })
+    fireEvent.change(screen.getByLabelText(/^name/i), { target: { value: 'Bob Jones' } })
+    fillNewAddress('99 Bob Rd', 'Suburb', 'VIC', '3000')
     fireEvent.change(screen.getByLabelText(/notes/i), { target: { value: 'Needs extra time' } })
     fireEvent.submit(screen.getByRole('button', { name: /add passenger/i }).closest('form')!)
 
     await waitFor(() =>
       expect(vi.mocked(api.passengers.create)).toHaveBeenCalledWith({
         name: 'Bob Jones',
-        homeAddress: '99 Bob Rd',
+        homeAddress: '99 Bob Rd, Suburb VIC 3000',
         notes: 'Needs extra time',
       })
     )
@@ -79,8 +89,8 @@ describe('PassengerForm — create mode', () => {
     vi.mocked(api.passengers.create).mockResolvedValue(existing)
     render(<PassengerForm onDone={onDone} />)
 
-    fireEvent.change(screen.getByLabelText(/name/i), { target: { value: 'Bob' } })
-    fireEvent.change(screen.getByLabelText(/home address/i), { target: { value: '1 Bob St' } })
+    fireEvent.change(screen.getByLabelText(/^name/i), { target: { value: 'Bob' } })
+    fillNewAddress('1 Bob St', 'Suburb', 'VIC', '3000')
     fireEvent.submit(screen.getByRole('button', { name: /add passenger/i }).closest('form')!)
 
     await waitFor(() => expect(onDone).toHaveBeenCalled())
@@ -90,8 +100,8 @@ describe('PassengerForm — create mode', () => {
     vi.mocked(api.passengers.create).mockRejectedValue(new Error('Address not found'))
     render(<PassengerForm onDone={onDone} />)
 
-    fireEvent.change(screen.getByLabelText(/name/i), { target: { value: 'Bob' } })
-    fireEvent.change(screen.getByLabelText(/home address/i), { target: { value: '1 Bob St' } })
+    fireEvent.change(screen.getByLabelText(/^name/i), { target: { value: 'Bob' } })
+    fillNewAddress('1 Bob St', 'Suburb', 'VIC', '3000')
     fireEvent.submit(screen.getByRole('button', { name: /add passenger/i }).closest('form')!)
 
     await waitFor(() => expect(screen.getByText('Address not found')).toBeInTheDocument())
@@ -103,8 +113,8 @@ describe('PassengerForm — create mode', () => {
     vi.mocked(api.passengers.create).mockReturnValue(new Promise((r) => { resolve = r }))
     render(<PassengerForm onDone={onDone} />)
 
-    fireEvent.change(screen.getByLabelText(/name/i), { target: { value: 'Bob' } })
-    fireEvent.change(screen.getByLabelText(/home address/i), { target: { value: '1 Bob St' } })
+    fireEvent.change(screen.getByLabelText(/^name/i), { target: { value: 'Bob' } })
+    fillNewAddress('1 Bob St', 'Suburb', 'VIC', '3000')
     fireEvent.submit(screen.getByRole('button', { name: /add passenger/i }).closest('form')!)
 
     await waitFor(() => expect(screen.getByRole('button', { name: /saving/i })).toBeDisabled())
@@ -120,12 +130,23 @@ describe('PassengerForm — edit mode', () => {
     expect(screen.getByRole('button', { name: /use a saved location/i })).toBeInTheDocument()
   })
 
-  it('clicking Edit address shows address input and cancel', () => {
+  it('clicking Edit address shows structured address fields and cancel', () => {
     render(<PassengerForm existing={existing} onDone={onDone} />)
     fireEvent.click(screen.getByRole('button', { name: /edit address/i }))
-    expect(screen.getByPlaceholderText(/123 main st/i)).toBeInTheDocument()
-    // Two cancels in DOM: section-specific (first) and form-level Cancel
+    expect(screen.getByLabelText(/street address/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/suburb/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/state/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/postcode/i)).toBeInTheDocument()
+    // Section-level cancel + form-level cancel
     expect(screen.getAllByRole('button', { name: /cancel/i })).toHaveLength(2)
+  })
+
+  it('pre-fills structured fields from existing home_address in edit mode', () => {
+    render(<PassengerForm existing={existing} onDone={onDone} />)
+    fireEvent.click(screen.getByRole('button', { name: /edit address/i }))
+    expect(screen.getByLabelText(/street address/i)).toHaveValue('10 Alice St')
+    expect(screen.getByLabelText(/suburb/i)).toHaveValue('Suburb')
+    expect(screen.getByLabelText(/postcode/i)).toHaveValue('3000')
   })
 
   it('cancel in edit mode returns to address display', () => {
@@ -150,18 +171,20 @@ describe('PassengerForm — edit mode', () => {
     )
   })
 
-  it('submits with homeUpdate type "edit" when address is changed', async () => {
+  it('submits with homeUpdate type "edit" with assembled address when fields are changed', async () => {
     vi.mocked(api.passengers.update).mockResolvedValue(existing)
     render(<PassengerForm existing={existing} onDone={onDone} />)
 
     fireEvent.click(screen.getByRole('button', { name: /edit address/i }))
-    fireEvent.change(screen.getByPlaceholderText(/123 main st/i), { target: { value: '42 New Rd' } })
+    fireEvent.change(screen.getByLabelText(/street address/i), { target: { value: '42 New Rd' } })
     fireEvent.submit(screen.getByRole('button', { name: /save changes/i }).closest('form')!)
 
     await waitFor(() =>
       expect(vi.mocked(api.passengers.update)).toHaveBeenCalledWith(
         existing.id,
-        expect.objectContaining({ homeUpdate: { type: 'edit', address: '42 New Rd' } }),
+        expect.objectContaining({
+          homeUpdate: { type: 'edit', address: '42 New Rd, Suburb VIC 3000' },
+        }),
       )
     )
   })

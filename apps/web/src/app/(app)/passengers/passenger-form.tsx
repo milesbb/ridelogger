@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { AddressFields, assembleAddress, parseAustralianAddress, type AustralianAddress } from "@/components/address-fields"
 import { api } from "@/lib/api/client"
 import type { Passenger, Location } from "@/lib/api/types"
 
@@ -17,7 +18,9 @@ export function PassengerForm({ existing, onDone }: Props) {
   const [name, setName] = useState(existing?.name ?? "")
   const [notes, setNotes] = useState(existing?.notes ?? "")
   const [homeEditMode, setHomeEditMode] = useState<HomeEditMode>("none")
-  const [editAddress, setEditAddress] = useState(existing?.home_address ?? "")
+  const [editAddress, setEditAddress] = useState<AustralianAddress>(() =>
+    parseAustralianAddress(existing?.home_address ?? "")
+  )
   const [switchLocationId, setSwitchLocationId] = useState<string | null>(null)
   const [locations, setLocations] = useState<Location[]>([])
   const [loadingLocations, setLoadingLocations] = useState(false)
@@ -45,13 +48,13 @@ export function PassengerForm({ existing, onDone }: Props) {
       if (existing) {
         const homeUpdate =
           homeEditMode === "edit"
-            ? { type: "edit" as const, address: editAddress }
+            ? { type: "edit" as const, address: assembleAddress(editAddress) }
             : homeEditMode === "switch" && switchLocationId
               ? { type: "switch" as const, locationId: switchLocationId }
               : { type: "none" as const }
         await api.passengers.update(existing.id, { name, notes, homeUpdate })
       } else {
-        await api.passengers.create({ name, homeAddress: editAddress, notes })
+        await api.passengers.create({ name, homeAddress: assembleAddress(editAddress), notes })
       }
       onDone()
     } catch (err) {
@@ -75,7 +78,15 @@ export function PassengerForm({ existing, onDone }: Props) {
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground border rounded-md px-3 py-2 bg-muted/40">{existing.home_address}</p>
               <div className="flex gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => { setEditAddress(existing.home_address); setHomeEditMode("edit") }}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setEditAddress(parseAustralianAddress(existing.home_address))
+                    setHomeEditMode("edit")
+                  }}
+                >
                   Edit address
                 </Button>
                 <Button type="button" variant="outline" size="sm" onClick={handleSwitchClick}>
@@ -86,14 +97,16 @@ export function PassengerForm({ existing, onDone }: Props) {
           )}
           {homeEditMode === "edit" && (
             <div className="space-y-2">
-              <Input
-                value={editAddress}
-                onChange={(e) => setEditAddress(e.target.value)}
-                placeholder="123 Main St, Suburb VIC 3000"
-                required
-                maxLength={255}
-              />
-              <Button type="button" variant="ghost" size="sm" onClick={() => setHomeEditMode("none")}>
+              <AddressFields value={editAddress} onChange={setEditAddress} idPrefix="passenger-edit" />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setEditAddress(parseAustralianAddress(existing.home_address))
+                  setHomeEditMode("none")
+                }}
+              >
                 Cancel
               </Button>
             </div>
@@ -119,7 +132,12 @@ export function PassengerForm({ existing, onDone }: Props) {
                   ))}
                 </div>
               )}
-              <Button type="button" variant="ghost" size="sm" onClick={() => { setHomeEditMode("none"); setSwitchLocationId(null) }}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => { setHomeEditMode("none"); setSwitchLocationId(null) }}
+              >
                 Cancel
               </Button>
             </div>
@@ -127,15 +145,8 @@ export function PassengerForm({ existing, onDone }: Props) {
         </div>
       ) : (
         <div className="space-y-2">
-          <label htmlFor="home-address" className="text-sm font-medium">Home address</label>
-          <Input
-            id="home-address"
-            value={editAddress}
-            onChange={(e) => setEditAddress(e.target.value)}
-            placeholder="123 Main St, Suburb VIC 3000"
-            required
-            maxLength={255}
-          />
+          <p className="text-sm font-medium">Home address</p>
+          <AddressFields value={editAddress} onChange={setEditAddress} idPrefix="passenger-new" />
         </div>
       )}
 

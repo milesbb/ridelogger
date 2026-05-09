@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { AddressFields, assembleAddress, parseAustralianAddress, type AustralianAddress } from "@/components/address-fields"
 import { api } from "@/lib/api/client"
 import type { Location } from "@/lib/api/types"
 
@@ -14,7 +15,9 @@ interface Props {
 
 export function LocationForm({ existing, onDone, prefillAddress }: Props) {
   const [name, setName] = useState(existing?.name ?? "")
-  const [address, setAddress] = useState(existing?.address ?? prefillAddress ?? "")
+  const [address, setAddress] = useState<AustralianAddress>(() =>
+    parseAustralianAddress(existing?.address ?? prefillAddress ?? "")
+  )
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
@@ -23,9 +26,10 @@ export function LocationForm({ existing, onDone, prefillAddress }: Props) {
     setLoading(true)
     setError("")
     try {
+      const assembled = assembleAddress(address)
       const result = existing
-        ? await api.locations.update(existing.id, { name, address })
-        : await api.locations.create({ name, address })
+        ? await api.locations.update(existing.id, { name, address: assembled })
+        : await api.locations.create({ name, address: assembled })
       onDone(result)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save")
@@ -41,8 +45,8 @@ export function LocationForm({ existing, onDone, prefillAddress }: Props) {
         <Input id="loc-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="St Vincent's Hospital" required maxLength={100} />
       </div>
       <div className="space-y-2">
-        <label htmlFor="loc-address" className="text-sm font-medium">Address</label>
-        <Input id="loc-address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="41 Victoria Parade, Fitzroy VIC 3065" required maxLength={255} />
+        <p className="text-sm font-medium">Address</p>
+        <AddressFields value={address} onChange={setAddress} disabled={loading} idPrefix="loc" />
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
       <div className="flex gap-3 pt-2">

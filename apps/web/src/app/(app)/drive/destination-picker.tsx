@@ -5,6 +5,7 @@ import { Check, Plus, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { AddressFields, assembleAddress, type AustralianAddress } from "@/components/address-fields"
 import { api } from "@/lib/api/client"
 import type { Location } from "@/lib/api/types"
 
@@ -19,13 +20,15 @@ interface Props {
   suggestedLocations?: Location[]
 }
 
+const emptyAddress: AustralianAddress = { street: "", suburb: "", state: "", postcode: "" }
+
 export function DestinationPicker({
   open, onClose, locations, passengerHomeLocationIds,
   selected, onSelect, onLocationAdded, suggestedLocations = [],
 }: Props) {
   const [showAddForm, setShowAddForm] = useState(false)
   const [newName, setNewName] = useState("")
-  const [newAddress, setNewAddress] = useState("")
+  const [newAddress, setNewAddress] = useState<AustralianAddress>(emptyAddress)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState("")
 
@@ -38,11 +41,11 @@ export function DestinationPicker({
     setSaving(true)
     setSaveError("")
     try {
-      const location = await api.locations.create({ name: newName, address: newAddress })
+      const location = await api.locations.create({ name: newName, address: assembleAddress(newAddress) })
       onLocationAdded(location)
       onSelect(location.id, location.name)
       setNewName("")
-      setNewAddress("")
+      setNewAddress(emptyAddress)
       setShowAddForm(false)
       onClose()
     } catch (err) {
@@ -71,7 +74,7 @@ export function DestinationPicker({
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md max-h-[80vh] flex flex-col">
+      <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col">
         <DialogHeader><DialogTitle>Where to?</DialogTitle></DialogHeader>
 
         <div className="flex-1 overflow-y-auto -mx-6 px-6 space-y-1">
@@ -110,8 +113,13 @@ export function DestinationPicker({
         <div className="border-t pt-4 mt-2">
           {showAddForm ? (
             <form onSubmit={handleAddNew} className="space-y-3">
-              <Input placeholder="Location name (e.g. St Vincent's)" value={newName} onChange={(e) => setNewName(e.target.value)} required />
-              <Input placeholder="Full address" value={newAddress} onChange={(e) => setNewAddress(e.target.value)} required />
+              <Input
+                placeholder="Location name (e.g. St Vincent's)"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                required
+              />
+              <AddressFields value={newAddress} onChange={setNewAddress} idPrefix="dest" />
               {saveError && <p className="text-xs text-destructive">{saveError}</p>}
               <div className="flex gap-2">
                 <Button type="submit" size="sm" disabled={saving}>{saving ? "Saving…" : "Save & select"}</Button>
