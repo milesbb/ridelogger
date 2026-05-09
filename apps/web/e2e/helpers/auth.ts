@@ -7,8 +7,7 @@ export async function authenticatePage(page: Page): Promise<void> {
   await page.context().addCookies([{
     name: 'refreshToken',
     value: 'fake-token',
-    domain: 'localhost',
-    path: '/',
+    url: 'http://localhost:3000',
     httpOnly: true,
   }])
   await page.addInitScript(() => {

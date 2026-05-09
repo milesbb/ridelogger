@@ -18,7 +18,7 @@ test.describe('Login page', () => {
 
   test('successful login navigates to /drive', async ({ page }) => {
     await page.route('**/v1/auth/login', async (route) => {
-      await page.context().addCookies([{ name: 'refreshToken', value: 'fake-token', domain: 'localhost', path: '/', httpOnly: true }])
+      await page.context().addCookies([{ name: 'refreshToken', value: 'fake-token', url: 'http://localhost:3000', httpOnly: true }])
       await route.fulfill({ json: { accessToken: 'test-token' } })
     })
     await page.route('**/v1/passengers', (route) => route.fulfill({ json: [] }))
