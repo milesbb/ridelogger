@@ -1,3 +1,5 @@
+const isDev = process.env.NODE_ENV === 'development'
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async headers() {
@@ -13,19 +15,20 @@ const nextConfig = {
             key: "Strict-Transport-Security",
             value: "max-age=63072000; includeSubDomains; preload",
           },
-          {
+          // CSP is skipped in dev — webpack HMR requires 'unsafe-eval' which would weaken prod policy
+          ...(isDev ? [] : [{
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline'",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob:",
-              "connect-src 'self' https://*.ridelogger.au http://localhost:4000",
+              "connect-src 'self' https://*.ridelogger.au",
               "font-src 'self'",
               "object-src 'none'",
               "frame-ancestors 'none'",
             ].join("; "),
-          },
+          }]),
         ],
       },
     ]
