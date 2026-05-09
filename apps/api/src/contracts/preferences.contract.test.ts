@@ -19,22 +19,23 @@ import app from '../app'
 
 const request = supertest(app)
 
-const mockPrefs = { drive_log_calendar_default: false }
+const mockPrefs = { drive_log_calendar_default: false, theme: 'light' as const }
 
 beforeEach(() => { vi.clearAllMocks() })
 
 describe('GET /v1/preferences', () => {
-  it('returns UserPreferences with drive_log_calendar_default', async () => {
+  it('returns UserPreferences with drive_log_calendar_default and theme', async () => {
     vi.mocked(svc.get).mockResolvedValue(mockPrefs)
     const res = await request.get('/v1/preferences').set('Authorization', 'Bearer test')
     expect(res.status).toBe(200)
     expect(typeof res.body.drive_log_calendar_default).toBe('boolean')
+    expect(typeof res.body.theme).toBe('string')
   })
 })
 
 describe('PATCH /v1/preferences', () => {
   it('updates and returns updated preferences', async () => {
-    vi.mocked(svc.update).mockResolvedValue({ drive_log_calendar_default: true })
+    vi.mocked(svc.update).mockResolvedValue({ drive_log_calendar_default: true, theme: 'light' })
     const res = await request.patch('/v1/preferences')
       .set('Authorization', 'Bearer test')
       .send({ driveLogCalendarDefault: true })
@@ -47,5 +48,29 @@ describe('PATCH /v1/preferences', () => {
       .set('Authorization', 'Bearer test')
       .send({ driveLogCalendarDefault: 'not-a-boolean' })
     expect(res.status).toBe(400)
+  })
+
+  it('updates and returns preferences when only theme is sent', async () => {
+    vi.mocked(svc.update).mockResolvedValue({ drive_log_calendar_default: false, theme: 'dark' })
+    const res = await request.patch('/v1/preferences')
+      .set('Authorization', 'Bearer test')
+      .send({ theme: 'dark' })
+    expect(res.status).toBe(200)
+    expect(res.body.theme).toBe('dark')
+  })
+
+  it('returns 400 for invalid theme value', async () => {
+    const res = await request.patch('/v1/preferences')
+      .set('Authorization', 'Bearer test')
+      .send({ theme: 'solarized' })
+    expect(res.status).toBe(400)
+  })
+
+  it('accepts an empty body', async () => {
+    vi.mocked(svc.update).mockResolvedValue({ drive_log_calendar_default: false, theme: 'light' })
+    const res = await request.patch('/v1/preferences')
+      .set('Authorization', 'Bearer test')
+      .send({})
+    expect(res.status).toBe(200)
   })
 })

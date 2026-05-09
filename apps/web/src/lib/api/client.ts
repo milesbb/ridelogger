@@ -132,6 +132,11 @@ export const api = {
         method: "PATCH",
         body: JSON.stringify({ driveLogCalendarDefault }),
       }),
+    saveTheme: (theme: 'light' | 'dark') =>
+      apiFetch<UserPreferences>("/v1/preferences", {
+        method: "PATCH",
+        body: JSON.stringify({ theme }),
+      }),
   },
   drive: {
     calculate: (legs: DriveLegInput[]) =>

@@ -7,6 +7,7 @@ import { SettingsForm } from "./settings-form"
 import { ChangePasswordForm } from "./change-password-form"
 import { DeleteAccountSection } from "./delete-account-section"
 import { DriveLogPreferenceForm } from "./drive-log-preference-form"
+import { ThemePreferenceForm } from "./theme-preference-form"
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<AppSettings | null>(null)
@@ -27,6 +28,8 @@ export default function SettingsPage() {
         </p>
       </div>
       <SettingsForm existing={settings} />
+      <hr className="border-border" />
+      <ThemePreferenceForm />
       <hr className="border-border" />
       <DriveLogPreferenceForm />
       <hr className="border-border" />

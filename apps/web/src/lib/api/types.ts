@@ -108,4 +108,5 @@ export interface DriveDayDetail extends DriveDaySummary {
 
 export interface UserPreferences {
   drive_log_calendar_default: boolean
+  theme: 'light' | 'dark'
 }

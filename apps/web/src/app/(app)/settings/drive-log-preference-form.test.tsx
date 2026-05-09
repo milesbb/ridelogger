@@ -17,22 +17,22 @@ beforeEach(() => { vi.clearAllMocks() })
 
 describe('DriveLogPreferenceForm', () => {
   it('shows List as active when drive_log_calendar_default is false', async () => {
-    vi.mocked(api.preferences.get).mockResolvedValue({ drive_log_calendar_default: false })
+    vi.mocked(api.preferences.get).mockResolvedValue({ drive_log_calendar_default: false, theme: 'light' as const })
     render(<DriveLogPreferenceForm />)
     await waitFor(() => expect(screen.getByRole('button', { name: 'List' })).toBeInTheDocument())
     expect(screen.getByRole('button', { name: 'List' })).not.toHaveClass('outline')
   })
 
   it('shows Calendar as active when drive_log_calendar_default is true', async () => {
-    vi.mocked(api.preferences.get).mockResolvedValue({ drive_log_calendar_default: true })
+    vi.mocked(api.preferences.get).mockResolvedValue({ drive_log_calendar_default: true, theme: 'light' as const })
     render(<DriveLogPreferenceForm />)
     await waitFor(() => expect(screen.getByRole('button', { name: 'Calendar' })).toBeInTheDocument())
     expect(screen.getByRole('button', { name: 'Calendar' })).not.toHaveClass('outline')
   })
 
   it('calls api.preferences.save(true) when Calendar button is clicked', async () => {
-    vi.mocked(api.preferences.get).mockResolvedValue({ drive_log_calendar_default: false })
-    vi.mocked(api.preferences.save).mockResolvedValue({ drive_log_calendar_default: true })
+    vi.mocked(api.preferences.get).mockResolvedValue({ drive_log_calendar_default: false, theme: 'light' as const })
+    vi.mocked(api.preferences.save).mockResolvedValue({ drive_log_calendar_default: true, theme: 'light' as const })
     render(<DriveLogPreferenceForm />)
     await waitFor(() => screen.getByRole('button', { name: 'Calendar' }))
     fireEvent.click(screen.getByRole('button', { name: 'Calendar' }))
@@ -40,8 +40,8 @@ describe('DriveLogPreferenceForm', () => {
   })
 
   it('calls api.preferences.save(false) when List button is clicked', async () => {
-    vi.mocked(api.preferences.get).mockResolvedValue({ drive_log_calendar_default: true })
-    vi.mocked(api.preferences.save).mockResolvedValue({ drive_log_calendar_default: false })
+    vi.mocked(api.preferences.get).mockResolvedValue({ drive_log_calendar_default: true, theme: 'light' as const })
+    vi.mocked(api.preferences.save).mockResolvedValue({ drive_log_calendar_default: false, theme: 'light' as const })
     render(<DriveLogPreferenceForm />)
     await waitFor(() => screen.getByRole('button', { name: 'List' }))
     fireEvent.click(screen.getByRole('button', { name: 'List' }))
@@ -49,7 +49,7 @@ describe('DriveLogPreferenceForm', () => {
   })
 
   it('shows error when save fails', async () => {
-    vi.mocked(api.preferences.get).mockResolvedValue({ drive_log_calendar_default: false })
+    vi.mocked(api.preferences.get).mockResolvedValue({ drive_log_calendar_default: false, theme: 'light' as const })
     vi.mocked(api.preferences.save).mockRejectedValue(new Error('Network error'))
     render(<DriveLogPreferenceForm />)
     await waitFor(() => screen.getByRole('button', { name: 'Calendar' }))

@@ -8,7 +8,8 @@ const router = Router()
 router.use(requireAuth)
 
 const preferencesUpdateSchema = z.object({
-  driveLogCalendarDefault: z.boolean(),
+  driveLogCalendarDefault: z.boolean().optional(),
+  theme: z.enum(['light', 'dark']).optional(),
 })
 
 router.get("/", async (req: Request, res: Response, next: NextFunction) => {
@@ -19,9 +20,10 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
 
 router.patch("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { driveLogCalendarDefault } = validateBody(preferencesUpdateSchema, req.body)
+    const { driveLogCalendarDefault, theme } = validateBody(preferencesUpdateSchema, req.body)
     res.json(await svc.update((req as AuthenticatedRequest).userId, {
       drive_log_calendar_default: driveLogCalendarDefault,
+      theme,
     }))
   } catch (err) { next(err) }
 })
