@@ -15,8 +15,12 @@ const DOW_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 const WEEKEND_FILL: [number, number, number] = [249, 250, 251]
 const BORDER_COLOUR: [number, number, number] = [229, 231, 235]
 
+function pdfSafe(s: string): string {
+  return s.replace(/→/g, "->").replace(/←/g, "<-").replace(/…/g, "...")
+}
+
 function truncate(s: string, max: number): string {
-  return s.length > max ? `${s.slice(0, max)}…` : s
+  return s.length > max ? `${s.slice(0, max)}...` : s
 }
 
 export function getMonthsInRange(from: string, to: string): Array<{ year: number; month: number }> {
@@ -109,7 +113,7 @@ export async function exportToCalendarPdf(
         doc.setTextColor(30, 64, 175)
 
         for (let li = 0; li < shown.length; li++) {
-          const label = truncate(shown[li].label, 32)
+          const label = truncate(pdfSafe(shown[li].label), 32)
           doc.text(label, x + 1.5, y + 8 + li * 4.5)
         }
 
