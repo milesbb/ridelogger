@@ -1,12 +1,16 @@
 "use client"
 
 import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { api } from "@/lib/api/client"
 import { DriveDayDetailModal } from "./drive-day-detail-modal"
 import { DriveLogExport } from "./drive-log-export"
+import { DriveCalendar } from "./drive-calendar"
 import type { DriveDaySummary } from "@/lib/api/types"
 
 interface Props {
   days: DriveDaySummary[]
+  defaultCalendar: boolean
   onDayDeleted: (id: string) => void
 }
 
@@ -51,9 +55,22 @@ function localDateString(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
 }
 
-export function DriveDaysList({ days, onDayDeleted }: Props) {
+function readStoredView(): "list" | "calendar" | null {
+  try {
+    const v = localStorage.getItem("drive-log-view")
+    if (v === "list" || v === "calendar") return v
+  } catch { /* localStorage unavailable */ }
+  return null
+}
+
+export function DriveDaysList({ days, defaultCalendar, onDayDeleted }: Props) {
   const [selected, setSelected] = useState<DriveDaySummary | null>(null)
   const [showNonPassenger, setShowNonPassenger] = useState(false)
+  const [view, setView] = useState<"list" | "calendar">(() => {
+    const stored = readStoredView()
+    if (stored) return stored
+    return defaultCalendar ? "calendar" : "list"
+  })
 
   const today = new Date()
   const thirtyDaysAgo = new Date(today)
@@ -63,23 +80,56 @@ export function DriveDaysList({ days, onDayDeleted }: Props) {
 
   const groups = groupByDate(days)
 
+  function switchView(v: "list" | "calendar") {
+    setView(v)
+    try { localStorage.setItem("drive-log-view", v) } catch { /* ignore */ }
+    void api.preferences.save(v === "calendar")
+  }
+
   return (
     <div className="space-y-6">
       <DriveLogExport defaultFrom={defaultFrom} defaultTo={defaultTo} />
+
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <h1 className="text-xl font-semibold">Drive Log</h1>
-        <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-          <input
-            type="checkbox"
-            checked={showNonPassenger}
-            onChange={(e) => setShowNonPassenger(e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 accent-primary cursor-pointer"
-          />
-          Include non-passenger drives
-        </label>
+        <div className="flex items-center gap-2">
+          <div className="flex rounded-md overflow-hidden border">
+            <Button
+              type="button"
+              variant={view === "list" ? "default" : "ghost"}
+              size="sm"
+              className="rounded-none border-0"
+              onClick={() => switchView("list")}
+            >
+              List
+            </Button>
+            <Button
+              type="button"
+              variant={view === "calendar" ? "default" : "ghost"}
+              size="sm"
+              className="rounded-none border-0 border-l"
+              onClick={() => switchView("calendar")}
+            >
+              Calendar
+            </Button>
+          </div>
+          {view === "list" && (
+            <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={showNonPassenger}
+                onChange={(e) => setShowNonPassenger(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 accent-primary cursor-pointer"
+              />
+              Include non-passenger drives
+            </label>
+          )}
+        </div>
       </div>
 
-      {days.length === 0 ? (
+      {view === "calendar" ? (
+        <DriveCalendar days={days} onDayClick={setSelected} />
+      ) : days.length === 0 ? (
         <p className="text-sm text-muted-foreground py-8 text-center">
           No drive days saved yet. Plan and save a drive day to see it here.
         </p>

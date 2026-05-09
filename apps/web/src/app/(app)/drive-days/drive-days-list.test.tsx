@@ -16,6 +16,20 @@ vi.mock('./drive-log-export', () => ({
   DriveLogExport: () => <div data-testid="drive-log-export" />,
 }))
 
+vi.mock('./drive-calendar', () => ({
+  DriveCalendar: ({ onDayClick }: { onDayClick: (day: DriveDaySummary) => void }) => (
+    <div data-testid="drive-calendar">
+      <button onClick={() => onDayClick(day1)}>Calendar day</button>
+    </div>
+  ),
+}))
+
+vi.mock('@/lib/api/client', () => ({
+  api: {
+    preferences: { save: vi.fn().mockResolvedValue({ drive_log_calendar_default: false }) },
+  },
+}))
+
 const onDayDeleted = vi.fn()
 
 const day1: DriveDaySummary = {
@@ -63,44 +77,45 @@ const day3: DriveDaySummary = {
 beforeEach(() => {
   vi.clearAllMocks()
   onDayDeleted.mockReset()
+  localStorage.clear()
 })
 
 describe('DriveDaysList — rendering', () => {
   it('shows empty state when no days are provided', () => {
-    render(<DriveDaysList days={[]} onDayDeleted={onDayDeleted} />)
+    render(<DriveDaysList days={[]} defaultCalendar={false} onDayDeleted={onDayDeleted} />)
     expect(screen.getByText(/no drive days saved yet/i)).toBeInTheDocument()
   })
 
   it('renders passenger names for each day', () => {
-    render(<DriveDaysList days={[day1]} onDayDeleted={onDayDeleted} />)
+    render(<DriveDaysList days={[day1]} defaultCalendar={false} onDayDeleted={onDayDeleted} />)
     expect(screen.getByText('Alice Smith, Bob Jones')).toBeInTheDocument()
   })
 
   it('renders "No passengers" for days with no passengers', () => {
-    render(<DriveDaysList days={[day2]} onDayDeleted={onDayDeleted} />)
+    render(<DriveDaysList days={[day2]} defaultCalendar={false} onDayDeleted={onDayDeleted} />)
     expect(screen.getByText('No passengers')).toBeInTheDocument()
   })
 
   it('renders the start time when present', () => {
-    render(<DriveDaysList days={[day1]} onDayDeleted={onDayDeleted} />)
+    render(<DriveDaysList days={[day1]} defaultCalendar={false} onDayDeleted={onDayDeleted} />)
     expect(screen.getByText('9:00 AM')).toBeInTheDocument()
   })
 
   it('renders the drive log export widget', () => {
-    render(<DriveDaysList days={[day1]} onDayDeleted={onDayDeleted} />)
+    render(<DriveDaysList days={[day1]} defaultCalendar={false} onDayDeleted={onDayDeleted} />)
     expect(screen.getByTestId('drive-log-export')).toBeInTheDocument()
   })
 })
 
 describe('DriveDaysList — grouping by date', () => {
   it('groups days with the same date under one heading', () => {
-    render(<DriveDaysList days={[day1, day2]} onDayDeleted={onDayDeleted} />)
+    render(<DriveDaysList days={[day1, day2]} defaultCalendar={false} onDayDeleted={onDayDeleted} />)
     const headings = screen.getAllByText(/wednesday/i)
     expect(headings).toHaveLength(1)
   })
 
   it('shows separate headings for days on different dates', () => {
-    render(<DriveDaysList days={[day1, day3]} onDayDeleted={onDayDeleted} />)
+    render(<DriveDaysList days={[day1, day3]} defaultCalendar={false} onDayDeleted={onDayDeleted} />)
     expect(screen.getByText(/wednesday/i)).toBeInTheDocument()
     expect(screen.getByText(/wednesday/i)).not.toBe(screen.queryByText(/april/i))
   })
@@ -108,12 +123,12 @@ describe('DriveDaysList — grouping by date', () => {
 
 describe('DriveDaysList — km display toggle', () => {
   it('shows passenger km by default', () => {
-    render(<DriveDaysList days={[day1]} onDayDeleted={onDayDeleted} />)
+    render(<DriveDaysList days={[day1]} defaultCalendar={false} onDayDeleted={onDayDeleted} />)
     expect(screen.getByText('24.8 km')).toBeInTheDocument()
   })
 
   it('shows total km when Include non-passenger drives is checked', () => {
-    render(<DriveDaysList days={[day1]} onDayDeleted={onDayDeleted} />)
+    render(<DriveDaysList days={[day1]} defaultCalendar={false} onDayDeleted={onDayDeleted} />)
     fireEvent.click(screen.getByLabelText(/include non-passenger drives/i))
     expect(screen.getByText('30 km')).toBeInTheDocument()
   })
@@ -121,16 +136,60 @@ describe('DriveDaysList — km display toggle', () => {
 
 describe('DriveDaysList — detail modal', () => {
   it('opens the detail modal when a day row is clicked', () => {
-    render(<DriveDaysList days={[day1]} onDayDeleted={onDayDeleted} />)
+    render(<DriveDaysList days={[day1]} defaultCalendar={false} onDayDeleted={onDayDeleted} />)
     fireEvent.click(screen.getByRole('button', { name: /alice smith/i }))
     expect(screen.getByTestId('detail-modal')).toBeInTheDocument()
     expect(screen.getByText('dd-1')).toBeInTheDocument()
   })
 
   it('closes the detail modal when the modal calls onClose', () => {
-    render(<DriveDaysList days={[day1]} onDayDeleted={onDayDeleted} />)
+    render(<DriveDaysList days={[day1]} defaultCalendar={false} onDayDeleted={onDayDeleted} />)
     fireEvent.click(screen.getByRole('button', { name: /alice smith/i }))
     fireEvent.click(screen.getByRole('button', { name: /close modal/i }))
     expect(screen.queryByTestId('detail-modal')).not.toBeInTheDocument()
+  })
+})
+
+describe('DriveDaysList — view toggle', () => {
+  it('shows list view by default when defaultCalendar is false', () => {
+    render(<DriveDaysList days={[day1]} defaultCalendar={false} onDayDeleted={onDayDeleted} />)
+    expect(screen.queryByTestId('drive-calendar')).not.toBeInTheDocument()
+    expect(screen.getByText('Alice Smith, Bob Jones')).toBeInTheDocument()
+  })
+
+  it('shows calendar view by default when defaultCalendar is true', () => {
+    render(<DriveDaysList days={[day1]} defaultCalendar={true} onDayDeleted={onDayDeleted} />)
+    expect(screen.getByTestId('drive-calendar')).toBeInTheDocument()
+  })
+
+  it('localStorage overrides defaultCalendar prop', () => {
+    localStorage.setItem('drive-log-view', 'calendar')
+    render(<DriveDaysList days={[day1]} defaultCalendar={false} onDayDeleted={onDayDeleted} />)
+    expect(screen.getByTestId('drive-calendar')).toBeInTheDocument()
+  })
+
+  it('switches to calendar view when Calendar button is clicked', () => {
+    render(<DriveDaysList days={[day1]} defaultCalendar={false} onDayDeleted={onDayDeleted} />)
+    fireEvent.click(screen.getByRole('button', { name: /^calendar$/i }))
+    expect(screen.getByTestId('drive-calendar')).toBeInTheDocument()
+  })
+
+  it('switches back to list view when List button is clicked', () => {
+    render(<DriveDaysList days={[day1]} defaultCalendar={true} onDayDeleted={onDayDeleted} />)
+    fireEvent.click(screen.getByRole('button', { name: /^list$/i }))
+    expect(screen.queryByTestId('drive-calendar')).not.toBeInTheDocument()
+    expect(screen.getByText('Alice Smith, Bob Jones')).toBeInTheDocument()
+  })
+
+  it('opens the detail modal when a calendar day is clicked', () => {
+    render(<DriveDaysList days={[day1]} defaultCalendar={true} onDayDeleted={onDayDeleted} />)
+    fireEvent.click(screen.getByRole('button', { name: /calendar day/i }))
+    expect(screen.getByTestId('detail-modal')).toBeInTheDocument()
+    expect(screen.getByText('dd-1')).toBeInTheDocument()
+  })
+
+  it('hides the non-passenger drives toggle in calendar view', () => {
+    render(<DriveDaysList days={[day1]} defaultCalendar={true} onDayDeleted={onDayDeleted} />)
+    expect(screen.queryByLabelText(/include non-passenger drives/i)).not.toBeInTheDocument()
   })
 })
