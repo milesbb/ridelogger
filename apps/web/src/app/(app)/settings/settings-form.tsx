@@ -41,6 +41,7 @@ export function SettingsForm({ existing }: Props) {
           onChange={(e) => setAddress(e.target.value)}
           placeholder="123 Example St, Suburb VIC 3000"
           required
+          maxLength={255}
         />
         <p className="text-xs text-muted-foreground">Enter a full street address including suburb and state.</p>
       </div>

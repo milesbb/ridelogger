@@ -120,8 +120,8 @@ export async function registerUser(
   const normalisedEmail = email.toLowerCase()
   const normalisedUsername = username.toLowerCase()
 
-  if (await emailExists(normalisedEmail)) throw Errors.Conflict('Email already registered')
-  if (await usernameExists(normalisedUsername)) throw Errors.Conflict('Username already taken')
+  if (await emailExists(normalisedEmail)) throw Errors.Conflict('An account with those details already exists')
+  if (await usernameExists(normalisedUsername)) throw Errors.Conflict('An account with those details already exists')
 
   const passwordHash = await bcrypt.hash(password, 12)
   const user = await createUser(normalisedEmail, normalisedUsername, passwordHash)

@@ -89,7 +89,7 @@ describe('registerUser', () => {
 
     await expect(registerUser('taken@example.com', 'jo', 'pass')).rejects.toMatchObject({
       errorKey: 'Conflict',
-      message: 'Email already registered',
+      message: 'An account with those details already exists',
     })
   })
 
@@ -99,7 +99,7 @@ describe('registerUser', () => {
 
     await expect(registerUser('new@example.com', 'taken', 'pass')).rejects.toMatchObject({
       errorKey: 'Conflict',
-      message: 'Username already taken',
+      message: 'An account with those details already exists',
     })
   })
 

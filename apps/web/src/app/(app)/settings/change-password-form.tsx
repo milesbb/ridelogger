@@ -52,6 +52,7 @@ export function ChangePasswordForm() {
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
             required
+            maxLength={128}
             autoComplete="current-password"
           />
         </div>
@@ -63,6 +64,7 @@ export function ChangePasswordForm() {
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             required
+            maxLength={128}
             autoComplete="new-password"
           />
         </div>
@@ -74,6 +76,7 @@ export function ChangePasswordForm() {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
+            maxLength={128}
             autoComplete="new-password"
           />
         </div>

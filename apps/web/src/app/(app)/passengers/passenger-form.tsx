@@ -65,7 +65,7 @@ export function PassengerForm({ existing, onDone }: Props) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <label htmlFor="name" className="text-sm font-medium">Name</label>
-        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Mary Smith" required />
+        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Mary Smith" required maxLength={100} />
       </div>
 
       {existing ? (
@@ -91,6 +91,7 @@ export function PassengerForm({ existing, onDone }: Props) {
                 onChange={(e) => setEditAddress(e.target.value)}
                 placeholder="123 Main St, Suburb VIC 3000"
                 required
+                maxLength={255}
               />
               <Button type="button" variant="ghost" size="sm" onClick={() => setHomeEditMode("none")}>
                 Cancel
@@ -133,13 +134,14 @@ export function PassengerForm({ existing, onDone }: Props) {
             onChange={(e) => setEditAddress(e.target.value)}
             placeholder="123 Main St, Suburb VIC 3000"
             required
+            maxLength={255}
           />
         </div>
       )}
 
       <div className="space-y-2">
         <label htmlFor="notes" className="text-sm font-medium">Notes <span className="text-muted-foreground font-normal">(optional)</span></label>
-        <Input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any relevant notes" />
+        <Input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any relevant notes" maxLength={1000} />
       </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}

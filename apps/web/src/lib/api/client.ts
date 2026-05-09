@@ -57,6 +57,7 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
   }
 
   if (!res.ok) {
+    if (res.status >= 500) throw new Error("Something went wrong. Please try again.")
     const err = await res.json().catch(() => ({ message: "Request failed" }))
     throw new Error(err.message ?? "Request failed")
   }

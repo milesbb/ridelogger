@@ -31,6 +31,10 @@ const request = supertest(buildApp())
 
 beforeEach(() => { vi.clearAllMocks() })
 
+const LOC_A = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
+const LOC_B = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12'
+const PASSENGER_ID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13'
+
 const mockSummary = {
   id: 'dd-1',
   user_id: 'user-1',
@@ -47,8 +51,8 @@ const mockSummary = {
 
 const mockLeg = {
   id: 'leg-1', drive_day_id: 'dd-1', user_id: 'user-1',
-  from_location_id: 'loc-a', to_location_id: 'loc-b',
-  passenger_id: 'p-1', label: 'John: pick-up → drop-off',
+  from_location_id: LOC_A, to_location_id: LOC_B,
+  passenger_id: PASSENGER_ID, label: 'John: pick-up → drop-off',
   distance_km: 12.1, duration_min: 22, is_passenger_leg: true,
   position: 0, from_location_name: 'Home', to_location_name: 'Hospital',
   created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
@@ -60,20 +64,25 @@ const mockDetail = {
 }
 
 const mockLocation = {
-  id: 'loc-b', user_id: 'user-1', name: 'Hospital', address: '1 Health Ave',
+  id: LOC_B, user_id: 'user-1', name: 'Hospital', address: '1 Health Ave',
   lat: -37.87, lon: 145.06, created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
 }
 
 describe('POST /calculate', () => {
   it('returns results for a valid legs array', async () => {
     vi.mocked(calculateDriveDay).mockResolvedValue([{ label: 'Home → Hospital', distanceKm: 5, durationMin: 10 }])
-    const res = await request.post('/calculate').send({ legs: [{ fromLocationId: 'a', toLocationId: 'b', label: 'Home → Hospital' }] })
+    const res = await request.post('/calculate').send({ legs: [{ fromLocationId: LOC_A, toLocationId: LOC_B, label: 'Home → Hospital' }] })
     expect(res.status).toBe(200)
     expect(res.body[0].label).toBe('Home → Hospital')
   })
 
   it('returns 400 when legs is not an array', async () => {
     const res = await request.post('/calculate').send({ legs: 'bad' })
+    expect(res.status).toBe(400)
+  })
+
+  it('returns 400 when a leg has an invalid location ID', async () => {
+    const res = await request.post('/calculate').send({ legs: [{ fromLocationId: 'not-a-uuid', toLocationId: LOC_B, label: 'Home → Hospital' }] })
     expect(res.status).toBe(400)
   })
 })
@@ -84,14 +93,14 @@ describe('POST /save', () => {
     const res = await request.post('/save').send({
       date: '2026-05-06',
       startTime: '09:00',
-      legs: [{ fromLocationId: 'a', toLocationId: 'b', passengerId: null, label: 'Home → Hospital', distanceKm: 5, durationMin: 10, isPassengerLeg: false }],
+      legs: [{ fromLocationId: LOC_A, toLocationId: LOC_B, passengerId: null, label: 'Home → Hospital', distanceKm: 5, durationMin: 10, isPassengerLeg: false }],
     })
     expect(res.status).toBe(201)
     expect(res.body.id).toBe('dd-1')
   })
 
   it('returns 400 when date is missing', async () => {
-    const res = await request.post('/save').send({ legs: [] })
+    const res = await request.post('/save').send({ legs: [{ fromLocationId: LOC_A, toLocationId: LOC_B, passengerId: null, label: 'x', distanceKm: 1, durationMin: 1, isPassengerLeg: false }] })
     expect(res.status).toBe(400)
   })
 

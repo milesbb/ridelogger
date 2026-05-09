@@ -1,7 +1,9 @@
 import { Router, Request, Response, NextFunction } from "express"
+import { z } from "zod"
 import { loginUser, refreshUserToken, logoutUser, registerUser, changePassword, deleteAccount } from "../service/auth"
 import { requireAuth, AuthenticatedRequest } from "../middlewares/auth"
 import { Errors } from "../utils/errorTypes"
+import { validateBody } from "../utils/validate"
 
 const router = Router()
 
@@ -25,11 +27,33 @@ function setAuthCookies(res: Response, refreshToken: string, userId: string) {
   res.cookie(USER_ID_COOKIE, userId, { ...cookieOpts(THIRTY_DAYS), httpOnly: false })
 }
 
+const loginSchema = z.object({
+  emailOrUsername: z.string().min(1).max(254),
+  password: z.string().min(1).max(128),
+})
+
+const registerSchema = z.object({
+  email: z.string().email().max(254),
+  username: z.string().min(2).max(50),
+  password: z.string().min(8).max(128)
+    .regex(/[A-Z]/, "Password must contain an uppercase letter")
+    .regex(/[0-9]/, "Password must contain a number"),
+})
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1).max(128),
+  newPassword: z.string().min(8).max(128)
+    .regex(/[A-Z]/, "New password must contain an uppercase letter")
+    .regex(/[0-9]/, "New password must contain a number"),
+})
+
+const deleteAccountSchema = z.object({
+  password: z.string().min(1).max(128),
+})
+
 router.post("/login", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { emailOrUsername, password } = req.body
-    if (!emailOrUsername || !password) throw Errors.BadRequest("emailOrUsername and password required")
-
+    const { emailOrUsername, password } = validateBody(loginSchema, req.body)
     const { accessToken, refreshToken, userId } = await loginUser(emailOrUsername, password)
     setAuthCookies(res, refreshToken, userId)
     res.json({ accessToken })
@@ -66,9 +90,7 @@ router.post("/logout", requireAuth, async (req: Request, res: Response, next: Ne
 router.post("/change-password", requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as AuthenticatedRequest).userId
-    const { currentPassword, newPassword } = req.body
-    if (!currentPassword || !newPassword) throw Errors.BadRequest("currentPassword and newPassword required")
-
+    const { currentPassword, newPassword } = validateBody(changePasswordSchema, req.body)
     await changePassword(userId, currentPassword, newPassword)
     res.status(204).send()
   } catch (err) {
@@ -79,9 +101,7 @@ router.post("/change-password", requireAuth, async (req: Request, res: Response,
 router.delete("/account", requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as AuthenticatedRequest).userId
-    const { password } = req.body
-    if (!password) throw Errors.BadRequest("password required")
-
+    const { password } = validateBody(deleteAccountSchema, req.body)
     await deleteAccount(userId, password)
     res.clearCookie(COOKIE_NAME)
     res.clearCookie(USER_ID_COOKIE)
@@ -93,9 +113,7 @@ router.delete("/account", requireAuth, async (req: Request, res: Response, next:
 
 router.post("/register", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { email, username, password } = req.body
-    if (!email || !username || !password) throw Errors.BadRequest("email, username, and password required")
-
+    const { email, username, password } = validateBody(registerSchema, req.body)
     const { accessToken, refreshToken, userId } = await registerUser(email, username, password)
     setAuthCookies(res, refreshToken, userId)
     res.status(201).json({ accessToken })

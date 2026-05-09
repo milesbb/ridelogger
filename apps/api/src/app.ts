@@ -1,6 +1,7 @@
 // Entry point for the Express app (wrapped by lambda.ts for production)
 import express, { Request, Response, NextFunction } from "express"
 import cors from "cors"
+import helmet from "helmet"
 import cookieParser from "cookie-parser"
 import rateLimit from "express-rate-limit"
 import router from "./controllers"
@@ -10,6 +11,8 @@ import logger from "./utils/logging"
 const app = express()
 
 app.set('trust proxy', 1)
+
+app.use(helmet())
 
 app.use((req: Request, res: Response, next: NextFunction) => {
   const start = Date.now()
@@ -37,6 +40,16 @@ app.use(
   }),
 )
 
+const authRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many attempts, please try again later." },
+})
+app.use("/v1/auth/login", authRateLimit)
+app.use("/v1/auth/register", authRateLimit)
+
 app.use(cookieParser())
 
 // In Lambda (Node.js 20) the request stream is never readable; parse the pre-set Buffer directly
@@ -54,7 +67,7 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
   }
   next()
 })
-app.use(express.json())
+app.use(express.json({ limit: "16kb" }))
 
 app.use("/v1", router)
 

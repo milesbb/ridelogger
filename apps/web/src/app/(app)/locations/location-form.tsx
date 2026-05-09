@@ -38,11 +38,11 @@ export function LocationForm({ existing, onDone, prefillAddress }: Props) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <label htmlFor="loc-name" className="text-sm font-medium">Name</label>
-        <Input id="loc-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="St Vincent's Hospital" required />
+        <Input id="loc-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="St Vincent's Hospital" required maxLength={100} />
       </div>
       <div className="space-y-2">
         <label htmlFor="loc-address" className="text-sm font-medium">Address</label>
-        <Input id="loc-address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="41 Victoria Parade, Fitzroy VIC 3065" required />
+        <Input id="loc-address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="41 Victoria Parade, Fitzroy VIC 3065" required maxLength={255} />
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
       <div className="flex gap-3 pt-2">

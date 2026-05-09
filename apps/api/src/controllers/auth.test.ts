@@ -83,7 +83,7 @@ describe('POST /register', () => {
 
     const res = await request
       .post('/register')
-      .send({ email: 'jo@example.com', username: 'jo', password: 'secret' })
+      .send({ email: 'jo@example.com', username: 'jo', password: 'Password1' })
 
     expect(res.status).toBe(201)
     expect(res.body.accessToken).toBe('acc-tok')
@@ -94,14 +94,34 @@ describe('POST /register', () => {
     expect(res.status).toBe(400)
   })
 
+  it('returns 400 when email is invalid', async () => {
+    const res = await request.post('/register').send({ email: 'not-an-email', username: 'jo', password: 'Password1' })
+    expect(res.status).toBe(400)
+  })
+
+  it('returns 400 when password is too short', async () => {
+    const res = await request.post('/register').send({ email: 'jo@example.com', username: 'jo', password: 'abc' })
+    expect(res.status).toBe(400)
+  })
+
+  it('returns 400 when password has no uppercase letter', async () => {
+    const res = await request.post('/register').send({ email: 'jo@example.com', username: 'jo', password: 'password1' })
+    expect(res.status).toBe(400)
+  })
+
+  it('returns 400 when password has no number', async () => {
+    const res = await request.post('/register').send({ email: 'jo@example.com', username: 'jo', password: 'Password' })
+    expect(res.status).toBe(400)
+  })
+
   it('returns 409 when email is already registered', async () => {
     vi.mocked(registerUser).mockRejectedValue(
-      Object.assign(new Error('Email already registered'), { httpStatus: 409, errorKey: 'Conflict' }),
+      Object.assign(new Error('An account with those details already exists'), { httpStatus: 409, errorKey: 'Conflict' }),
     )
 
     const res = await request
       .post('/register')
-      .send({ email: 'taken@example.com', username: 'jo', password: 'pass' })
+      .send({ email: 'taken@example.com', username: 'jo', password: 'Password1' })
 
     expect(res.status).toBe(409)
   })
@@ -131,14 +151,14 @@ describe('POST /change-password', () => {
 
     const res = await request
       .post('/change-password')
-      .send({ currentPassword: 'old', newPassword: 'new' })
+      .send({ currentPassword: 'old', newPassword: 'NewPass1' })
 
     expect(res.status).toBe(204)
-    expect(changePassword).toHaveBeenCalledWith('user-1', 'old', 'new')
+    expect(changePassword).toHaveBeenCalledWith('user-1', 'old', 'NewPass1')
   })
 
   it('returns 400 when currentPassword is missing', async () => {
-    const res = await request.post('/change-password').send({ newPassword: 'new' })
+    const res = await request.post('/change-password').send({ newPassword: 'NewPass1' })
     expect(res.status).toBe(400)
   })
 
@@ -147,12 +167,17 @@ describe('POST /change-password', () => {
     expect(res.status).toBe(400)
   })
 
+  it('returns 400 when newPassword does not meet strength requirements', async () => {
+    const res = await request.post('/change-password').send({ currentPassword: 'old', newPassword: 'weakpass' })
+    expect(res.status).toBe(400)
+  })
+
   it('returns 401 when current password is wrong', async () => {
     vi.mocked(changePassword).mockRejectedValue(
       Object.assign(new Error('Invalid email or password'), { httpStatus: 401, errorKey: 'InvalidCredentials' }),
     )
 
-    const res = await request.post('/change-password').send({ currentPassword: 'wrong', newPassword: 'new' })
+    const res = await request.post('/change-password').send({ currentPassword: 'wrong', newPassword: 'NewPass1' })
     expect(res.status).toBe(401)
   })
 })
