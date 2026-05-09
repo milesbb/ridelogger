@@ -105,3 +105,7 @@ export interface ExportLeg extends SavedLeg {
 export interface DriveDayDetail extends DriveDaySummary {
   legs: SavedLeg[]
 }
+
+export interface UserPreferences {
+  drive_log_calendar_default: boolean
+}

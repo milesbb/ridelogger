@@ -1,4 +1,4 @@
-import type { Passenger, Location, AppSettings, DriveLegInput, DriveLegResult, SaveDriveDayInput, DriveDaySummary, DriveDayDetail, ExportLeg } from "./types"
+import type { Passenger, Location, AppSettings, UserPreferences, DriveLegInput, DriveLegResult, SaveDriveDayInput, DriveDaySummary, DriveDayDetail, ExportLeg } from "./types"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"
 
@@ -124,6 +124,14 @@ export const api = {
     get: () => apiFetch<AppSettings | null>("/v1/settings"),
     save: (homeAddress: string) =>
       apiFetch<AppSettings>("/v1/settings", { method: "PUT", body: JSON.stringify({ homeAddress }) }),
+  },
+  preferences: {
+    get: () => apiFetch<UserPreferences>("/v1/preferences"),
+    save: (driveLogCalendarDefault: boolean) =>
+      apiFetch<UserPreferences>("/v1/preferences", {
+        method: "PATCH",
+        body: JSON.stringify({ driveLogCalendarDefault }),
+      }),
   },
   drive: {
     calculate: (legs: DriveLegInput[]) =>
