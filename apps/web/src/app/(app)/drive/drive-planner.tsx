@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { ChevronDown, ChevronUp, GripVertical, MapPin, Home, Pencil, UserPlus } from "lucide-react"
+import { ChevronDown, ChevronUp, MapPin, Home, Pencil, UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { DestinationPicker } from "./destination-picker"
@@ -287,8 +287,8 @@ function SortableSlotCard({ slot, index, totalSlots, onMoveSlot, onRemove, onSet
         {...attributes}
         aria-label="Drag to reorder"
       >
-        <div className="flex justify-center pt-1.5 pb-0.5">
-          <GripVertical className="h-4 w-4 text-muted-foreground/60" />
+        <div className="flex justify-center pt-1.5 pb-1">
+          <div className="w-8 h-1 rounded-full bg-muted-foreground/30" />
         </div>
         <div className="flex items-center gap-2 px-4 py-2">
           <div
