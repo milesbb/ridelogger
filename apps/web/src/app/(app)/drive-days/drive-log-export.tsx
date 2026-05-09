@@ -6,6 +6,7 @@ import { api } from "@/lib/api/client"
 import type { ExportLeg } from "@/lib/api/types"
 import type { ExportColumn, ExportRow } from "@/lib/export-utils"
 import { exportToCsv, exportToExcel, exportToPdf } from "@/lib/export-utils"
+import { exportToCalendarPdf } from "./calendar-pdf-export"
 
 interface Props {
   defaultFrom: string
@@ -36,6 +37,7 @@ export function DriveLogExport({ defaultFrom, defaultTo }: Props) {
   const [to, setTo] = useState(defaultTo)
   const [includePersonal, setIncludePersonal] = useState(false)
   const [showLocationNames, setShowLocationNames] = useState(true)
+  const [calendarPdf, setCalendarPdf] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
@@ -71,7 +73,11 @@ export function DriveLogExport({ defaultFrom, defaultTo }: Props) {
   async function handlePdf() {
     const legs = await fetchLegs()
     if (!legs) return
-    await exportToPdf(filename, COLUMNS, buildRows(legs, showLocationNames), title)
+    if (calendarPdf) {
+      await exportToCalendarPdf(filename, from, to, legs)
+    } else {
+      await exportToPdf(filename, COLUMNS, buildRows(legs, showLocationNames), title)
+    }
   }
 
   return (
@@ -115,6 +121,15 @@ export function DriveLogExport({ defaultFrom, defaultTo }: Props) {
             className="h-4 w-4 rounded border-gray-300 accent-primary cursor-pointer"
           />
           Show location names
+        </label>
+        <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={calendarPdf}
+            onChange={(e) => setCalendarPdf(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 accent-primary cursor-pointer"
+          />
+          Calendar layout (PDF only)
         </label>
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
