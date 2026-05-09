@@ -56,7 +56,7 @@ function buildLegs(slots: PassengerSlot[], homeLocationId: string): DriveLegInpu
       fromLocationId: slot.dropoffLocationId!,
       toLocationId: slot.pickupLocationId,
       label: `${slot.passenger.name}: drop-off → pick-up`,
-      passengerLeg: false,
+      passengerLeg: true,
     })
     if (i < slots.length - 1) {
       legs.push({
@@ -119,7 +119,7 @@ function buildSaveLegs(
       label: `${slot.passenger.name}: drop-off → pick-up`,
       distanceKm: results[ri]?.distanceKm ?? 0,
       durationMin: results[ri]?.durationMin ?? 0,
-      isPassengerLeg: false,
+      isPassengerLeg: true,
     })
     ri++
     if (i < slots.length - 1) {
@@ -373,10 +373,15 @@ export function DrivePlanner({ passengers, locations, settings, onLocationsChang
   const [dropoffSuggestions, setDropoffSuggestions] = useState<Location[]>([])
   const [results, setResults] = useState<DriveLegResult[] | null>(null)
   const [legsForSave, setLegsForSave] = useState<SaveLegInput[] | null>(null)
+  const resultsRef = useRef<HTMLDivElement>(null)
   const [calculating, setCalculating] = useState(false)
   const [calcError, setCalcError] = useState("")
   const [quickAddOpen, setQuickAddOpen] = useState(false)
   const [passengerSearch, setPassengerSearch] = useState("")
+
+  useEffect(() => {
+    if (results) resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }, [results])
 
   useEffect(() => {
     if (!initialDayDetail || passengers.length === 0 || locations.length === 0) return
@@ -620,7 +625,7 @@ export function DrivePlanner({ passengers, locations, settings, onLocationsChang
         </div>
       )}
 
-      {results && <DriveResultsTable results={results} />}
+      {results && <div ref={resultsRef}><DriveResultsTable results={results} /></div>}
 
       {results && legsForSave && (
         <SaveSection date={date} legsForSave={legsForSave} onSaved={handleSaved} />

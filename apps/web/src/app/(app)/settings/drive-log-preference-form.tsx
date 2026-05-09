@@ -20,6 +20,7 @@ export function DriveLogPreferenceForm() {
     setCalendarDefault(value)
     setError("")
     try {
+      localStorage.setItem("drive-log-view", value ? "calendar" : "list")
       await api.preferences.save(value)
     } catch {
       setError("Failed to save preference")
