@@ -4,6 +4,7 @@ import passengersRouter from "./passengers"
 import locationsRouter from "./locations"
 import settingsRouter from "./settings"
 import driveRouter from "./drive"
+import preferencesRouter from "./preferences"
 
 const router = Router()
 
@@ -13,5 +14,6 @@ router.use("/passengers", passengersRouter)
 router.use("/locations", locationsRouter)
 router.use("/settings", settingsRouter)
 router.use("/drive", driveRouter)
+router.use("/preferences", preferencesRouter)
 
 export default router
