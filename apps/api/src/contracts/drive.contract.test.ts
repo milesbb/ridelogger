@@ -34,12 +34,15 @@ const mockSummary = {
   updated_at: '2024-01-15T00:00:00.000Z',
 }
 
+const LOC_A = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
+const LOC_B = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12'
+
 const mockLeg = {
   id: 'leg-1',
   drive_day_id: 'd-1',
   user_id: 'u-1',
-  from_location_id: 'l-1',
-  to_location_id: 'l-2',
+  from_location_id: LOC_A,
+  to_location_id: LOC_B,
   passenger_id: null,
   label: 'Home → Office',
   distance_km: 12.4,
@@ -93,7 +96,7 @@ describe('POST /v1/drive/calculate', () => {
     ])
     const res = await request.post('/v1/drive/calculate')
       .set('Authorization', 'Bearer test')
-      .send({ legs: [{ fromLocationId: 'l-1', toLocationId: 'l-2', label: 'Leg 1' }] })
+      .send({ legs: [{ fromLocationId: LOC_A, toLocationId: LOC_B, label: 'Leg 1' }] })
     expect(res.status).toBe(200)
     expect(Array.isArray(res.body)).toBe(true)
     const leg = res.body[0]
@@ -110,8 +113,8 @@ describe('POST /v1/drive/calculate', () => {
     const res = await request.post('/v1/drive/calculate')
       .set('Authorization', 'Bearer test')
       .send({ legs: [
-        { fromLocationId: 'l-1', toLocationId: 'l-2', label: 'Leg 1' },
-        { fromLocationId: 'l-bad', toLocationId: 'l-2', label: 'Leg 2' },
+        { fromLocationId: LOC_A, toLocationId: LOC_B, label: 'Leg 1' },
+        { fromLocationId: LOC_A, toLocationId: LOC_B, label: 'Leg 2' },
       ] })
     expect(res.status).toBe(200)
     expect(res.body[0].error).toBeUndefined()
@@ -129,11 +132,17 @@ describe('POST /v1/drive/calculate', () => {
 })
 
 describe('POST /v1/drive/save', () => {
+  const validLeg = {
+    fromLocationId: LOC_A, toLocationId: LOC_B,
+    passengerId: null, label: 'Home → Office',
+    distanceKm: 12.4, durationMin: 22, isPassengerLeg: false,
+  }
+
   it('returns 201 with { id: string }', async () => {
     vi.mocked(svc.saveDriveDay).mockResolvedValue({ id: 'd-1' })
     const res = await request.post('/v1/drive/save')
       .set('Authorization', 'Bearer test')
-      .send({ date: '2024-01-15', startTime: null, legs: [] })
+      .send({ date: '2024-01-15', startTime: null, legs: [validLeg] })
     expect(res.status).toBe(201)
     expect(typeof res.body.id).toBe('string')
   })
@@ -141,7 +150,7 @@ describe('POST /v1/drive/save', () => {
   it('returns 400 when date is missing', async () => {
     const res = await request.post('/v1/drive/save')
       .set('Authorization', 'Bearer test')
-      .send({ legs: [] })
+      .send({ legs: [validLeg] })
     expect(res.status).toBe(400)
     expect(typeof res.body.errorKey).toBe('string')
   })
