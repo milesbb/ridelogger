@@ -157,7 +157,7 @@ export function DriveCalendar({ days, onDayClick }: Props) {
                   key={colIdx}
                   className={[
                     "min-h-[80px] sm:min-h-[96px] p-1 border-l first:border-l-0 flex flex-col gap-0.5",
-                    cell.isWeekend ? "bg-gray-50" : "bg-background",
+                    cell.isWeekend ? "bg-gray-50 dark:bg-gray-800" : "bg-background",
                     !cell.isCurrentMonth ? "opacity-40" : "",
                   ].join(" ")}
                 >
