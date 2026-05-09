@@ -23,7 +23,7 @@ const nextConfig = {
               "script-src 'self' 'unsafe-inline'",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob:",
-              "connect-src 'self' https://*.ridelogger.au",
+              "connect-src 'self' https://*.ridelogger.au https://*.execute-api.ap-southeast-2.amazonaws.com",
               "font-src 'self'",
               "object-src 'none'",
               "frame-ancestors 'none'",
