@@ -29,7 +29,6 @@ const existing: Passenger = {
   home_location_id: 'loc-1',
   home_lat: null,
   home_lon: null,
-  notes: null,
   created_at: '',
   updated_at: '',
 }
@@ -60,14 +59,14 @@ beforeEach(() => {
 })
 
 describe('PassengerForm — create mode', () => {
-  it('renders name, home address, and notes fields', () => {
+  it('renders name and home address fields', () => {
     render(<PassengerForm onDone={onDone} />)
     expect(screen.getByLabelText(/^name/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/street address/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/suburb/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/state/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/postcode/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/notes/i)).toBeInTheDocument()
+    expect(screen.queryByLabelText(/notes/i)).not.toBeInTheDocument()
   })
 
   it('calls api.passengers.create with assembled address on submit', async () => {
@@ -76,14 +75,12 @@ describe('PassengerForm — create mode', () => {
 
     fireEvent.change(screen.getByLabelText(/^name/i), { target: { value: 'Bob Jones' } })
     fillNewAddress('99 Bob Rd', 'Suburb', 'VIC', '3000')
-    fireEvent.change(screen.getByLabelText(/notes/i), { target: { value: 'Needs extra time' } })
     fireEvent.submit(screen.getByRole('button', { name: /add passenger/i }).closest('form')!)
 
     await waitFor(() =>
       expect(vi.mocked(api.passengers.create)).toHaveBeenCalledWith({
         name: 'Bob Jones',
         homeAddress: '99 Bob Rd, Suburb VIC 3000',
-        notes: 'Needs extra time',
       })
     )
   })

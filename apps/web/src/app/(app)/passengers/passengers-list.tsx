@@ -73,7 +73,6 @@ export function PassengersList({ passengers, onRefresh }: Props) {
               <div className="min-w-0">
                 <p className="font-medium">{p.name}</p>
                 <p className="text-sm text-muted-foreground truncate">{p.home_address}</p>
-                {p.notes && <p className="text-xs text-muted-foreground mt-0.5">{p.notes}</p>}
               </div>
               <div className="flex gap-1 shrink-0">
                 <Dialog open={editingId === p.id} onOpenChange={(open) => setEditingId(open ? p.id : null)}>

@@ -18,7 +18,6 @@ type HomeEditMode = "none" | "edit" | "switch"
 export function PassengerForm({ existing, onDone }: Props) {
   const homeState = useHomeState()
   const [name, setName] = useState(existing?.name ?? "")
-  const [notes, setNotes] = useState(existing?.notes ?? "")
   const [homeEditMode, setHomeEditMode] = useState<HomeEditMode>("none")
   const [editAddress, setEditAddress] = useState<AustralianAddress>(() =>
     parseAustralianAddress(existing?.home_address ?? "")
@@ -61,9 +60,9 @@ export function PassengerForm({ existing, onDone }: Props) {
             : homeEditMode === "switch" && switchLocationId
               ? { type: "switch" as const, locationId: switchLocationId }
               : { type: "none" as const }
-        await api.passengers.update(existing.id, { name, notes, homeUpdate })
+        await api.passengers.update(existing.id, { name, homeUpdate })
       } else {
-        await api.passengers.create({ name, homeAddress: assembleAddress(editAddress), notes })
+        await api.passengers.create({ name, homeAddress: assembleAddress(editAddress) })
       }
       onDone()
     } catch (err) {
@@ -158,11 +157,6 @@ export function PassengerForm({ existing, onDone }: Props) {
           <AddressFields value={editAddress} onChange={setEditAddress} idPrefix="passenger-new" />
         </div>
       )}
-
-      <div className="space-y-2">
-        <label htmlFor="notes" className="text-sm font-medium">Notes <span className="text-muted-foreground font-normal">(optional)</span></label>
-        <Input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any relevant notes" maxLength={1000} />
-      </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 

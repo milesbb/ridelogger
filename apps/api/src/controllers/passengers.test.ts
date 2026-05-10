@@ -39,7 +39,6 @@ const mockPassenger = {
   home_address: '1 Alice St, Suburb VIC 3000',
   home_lat: -37.81,
   home_lon: 144.97,
-  notes: 'Needs wheelchair access',
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 }
@@ -64,23 +63,12 @@ describe('GET /', () => {
 describe('POST /', () => {
   it('returns 201 with the created passenger', async () => {
     vi.mocked(svc.create).mockResolvedValue(mockPassenger)
-    const res = await request.post('/').send({ name: 'Alice Smith', homeAddress: '1 Alice St', notes: 'Needs wheelchair access' })
+    const res = await request.post('/').send({ name: 'Alice Smith', homeAddress: '1 Alice St' })
     expect(res.status).toBe(201)
     expect(res.body.id).toBe('p-1')
     expect(vi.mocked(svc.create)).toHaveBeenCalledWith('user-1', {
       name: 'Alice Smith',
       homeAddress: '1 Alice St',
-      notes: 'Needs wheelchair access',
-    })
-  })
-
-  it('defaults notes to empty string when omitted', async () => {
-    vi.mocked(svc.create).mockResolvedValue(mockPassenger)
-    await request.post('/').send({ name: 'Alice', homeAddress: '1 Alice St' })
-    expect(vi.mocked(svc.create)).toHaveBeenCalledWith('user-1', {
-      name: 'Alice',
-      homeAddress: '1 Alice St',
-      notes: '',
     })
   })
 
@@ -89,26 +77,24 @@ describe('POST /', () => {
     const res = await request.post('/').send({ name: 'Alice', homeAddress: 'xyz' })
     expect(res.status).toBe(400)
   })
+
+  it('rejects requests missing homeAddress', async () => {
+    const res = await request.post('/').send({ name: 'Alice' })
+    expect(res.status).toBe(400)
+  })
 })
 
 describe('PUT /:id', () => {
   it('returns 200 with the updated passenger', async () => {
     const updated = { ...mockPassenger, name: 'Alice Jones' }
     vi.mocked(svc.update).mockResolvedValue(updated)
-    const res = await request.put('/p-1').send({ name: 'Alice Jones', notes: '', homeUpdate: { type: 'none' } })
+    const res = await request.put('/p-1').send({ name: 'Alice Jones', homeUpdate: { type: 'none' } })
     expect(res.status).toBe(200)
     expect(res.body.name).toBe('Alice Jones')
     expect(vi.mocked(svc.update)).toHaveBeenCalledWith('p-1', 'user-1', {
       name: 'Alice Jones',
-      notes: '',
       homeUpdate: { type: 'none' },
     })
-  })
-
-  it('defaults notes to empty string when omitted', async () => {
-    vi.mocked(svc.update).mockResolvedValue(mockPassenger)
-    await request.put('/p-1').send({ name: 'Alice', homeUpdate: { type: 'none' } })
-    expect(vi.mocked(svc.update)).toHaveBeenCalledWith('p-1', 'user-1', expect.objectContaining({ notes: '' }))
   })
 
   it('returns 404 when passenger does not exist', async () => {

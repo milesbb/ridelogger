@@ -29,7 +29,6 @@ const alice: Passenger = {
   home_location_id: 'loc-1',
   home_lat: null,
   home_lon: null,
-  notes: 'Needs wheelchair access',
   created_at: '',
   updated_at: '',
 }
@@ -42,7 +41,6 @@ const bob: Passenger = {
   home_location_id: 'loc-2',
   home_lat: null,
   home_lon: null,
-  notes: null,
   created_at: '',
   updated_at: '',
 }
@@ -66,10 +64,6 @@ describe('PassengersList — rendering', () => {
     expect(screen.getByText('2 Bob Rd')).toBeInTheDocument()
   })
 
-  it('renders optional notes when present', () => {
-    render(<PassengersList passengers={[alice]} onRefresh={onRefresh} />)
-    expect(screen.getByText('Needs wheelchair access')).toBeInTheDocument()
-  })
 })
 
 describe('PassengersList — search', () => {

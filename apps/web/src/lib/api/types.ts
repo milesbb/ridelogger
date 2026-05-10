@@ -6,7 +6,6 @@ export interface Passenger {
   home_address: string
   home_lat: number | null
   home_lon: number | null
-  notes: string | null
   created_at: string
   updated_at: string
 }

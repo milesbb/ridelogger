@@ -2,10 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('../data/passengers')
 vi.mock('../data/locations')
+vi.mock('../data/auditLogs')
 vi.mock('./geocode')
 
 import * as db from '../data/passengers'
 import * as locationDb from '../data/locations'
+import * as auditDb from '../data/auditLogs'
 import * as geocode from './geocode'
 import { list, create, update, remove } from './passengers'
 
@@ -28,12 +30,14 @@ const mockPassenger = {
   home_address: '123 Main St',
   home_lat: -37.8,
   home_lon: 144.9,
-  notes: null,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 }
 
-beforeEach(() => { vi.clearAllMocks() })
+beforeEach(() => {
+  vi.clearAllMocks()
+  vi.mocked(auditDb.insertAuditLog).mockResolvedValue(undefined)
+})
 
 describe('list', () => {
   it('returns passengers from the data layer', async () => {
@@ -44,6 +48,14 @@ describe('list', () => {
     expect(result).toEqual([mockPassenger])
     expect(db.listPassengers).toHaveBeenCalledWith('u-1')
   })
+
+  it('logs a view audit event', async () => {
+    vi.mocked(db.listPassengers).mockResolvedValue([mockPassenger])
+
+    await list('u-1')
+
+    expect(auditDb.insertAuditLog).toHaveBeenCalledWith('u-1', 'view', 'passenger', null)
+  })
 })
 
 describe('create', () => {
@@ -52,7 +64,7 @@ describe('create', () => {
     vi.mocked(locationDb.createLocation).mockResolvedValue(mockLocation)
     vi.mocked(db.createPassenger).mockResolvedValue(mockPassenger)
 
-    const result = await create('u-1', { name: 'Alice', homeAddress: '123 Main St', notes: '' })
+    const result = await create('u-1', { name: 'Alice', homeAddress: '123 Main St' })
 
     expect(geocode.geocodeAddress).toHaveBeenCalledWith('123 Main St')
     expect(locationDb.createLocation).toHaveBeenCalledWith('u-1', {
@@ -64,34 +76,32 @@ describe('create', () => {
     expect(db.createPassenger).toHaveBeenCalledWith('u-1', {
       name: 'Alice',
       home_location_id: 'loc-1',
-      notes: null,
     })
     expect(result).toEqual(mockPassenger)
   })
 
-  it('stores null notes when notes string is empty', async () => {
+  it('logs a create audit event with the new passenger id', async () => {
     vi.mocked(geocode.geocodeAddress).mockResolvedValue({ lat: 0, lon: 0 })
     vi.mocked(locationDb.createLocation).mockResolvedValue(mockLocation)
     vi.mocked(db.createPassenger).mockResolvedValue(mockPassenger)
 
-    await create('u-1', { name: 'Alice', homeAddress: 'addr', notes: '' })
+    await create('u-1', { name: 'Alice', homeAddress: 'addr' })
 
-    expect(db.createPassenger).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ notes: null }))
+    expect(auditDb.insertAuditLog).toHaveBeenCalledWith('u-1', 'create', 'passenger', 'p-1')
   })
 })
 
 describe('update', () => {
-  it('updates name and notes without touching the home location when homeUpdate is none', async () => {
+  it('updates name without touching the home location when homeUpdate is none', async () => {
     vi.mocked(db.getPassenger).mockResolvedValue(mockPassenger)
     vi.mocked(db.updatePassenger).mockResolvedValue(mockPassenger)
 
-    const result = await update('p-1', 'u-1', { name: 'Alice', notes: '', homeUpdate: { type: 'none' } })
+    const result = await update('p-1', 'u-1', { name: 'Alice', homeUpdate: { type: 'none' } })
 
     expect(locationDb.updateLocation).not.toHaveBeenCalled()
     expect(locationDb.getLocation).not.toHaveBeenCalled()
     expect(db.updatePassenger).toHaveBeenCalledWith('p-1', 'u-1', {
       name: 'Alice',
-      notes: null,
       home_location_id: 'loc-1',
     })
     expect(result).toEqual(mockPassenger)
@@ -104,7 +114,7 @@ describe('update', () => {
     vi.mocked(locationDb.updateLocation).mockResolvedValue({ ...mockLocation, address: '999 New St' })
     vi.mocked(db.updatePassenger).mockResolvedValue(mockPassenger)
 
-    await update('p-1', 'u-1', { name: 'Alice', notes: '', homeUpdate: { type: 'edit', address: '999 New St' } })
+    await update('p-1', 'u-1', { name: 'Alice', homeUpdate: { type: 'edit', address: '999 New St' } })
 
     expect(geocode.geocodeAddress).toHaveBeenCalledWith('999 New St')
     expect(locationDb.updateLocation).toHaveBeenCalledWith('loc-1', 'u-1', {
@@ -122,10 +132,19 @@ describe('update', () => {
     vi.mocked(locationDb.getLocation).mockResolvedValue(newLocation)
     vi.mocked(db.updatePassenger).mockResolvedValue({ ...mockPassenger, home_location_id: 'loc-2' })
 
-    await update('p-1', 'u-1', { name: 'Alice', notes: '', homeUpdate: { type: 'switch', locationId: 'loc-2' } })
+    await update('p-1', 'u-1', { name: 'Alice', homeUpdate: { type: 'switch', locationId: 'loc-2' } })
 
     expect(geocode.geocodeAddress).not.toHaveBeenCalled()
     expect(db.updatePassenger).toHaveBeenCalledWith('p-1', 'u-1', expect.objectContaining({ home_location_id: 'loc-2' }))
+  })
+
+  it('logs an update audit event', async () => {
+    vi.mocked(db.getPassenger).mockResolvedValue(mockPassenger)
+    vi.mocked(db.updatePassenger).mockResolvedValue(mockPassenger)
+
+    await update('p-1', 'u-1', { name: 'Alice', homeUpdate: { type: 'none' } })
+
+    expect(auditDb.insertAuditLog).toHaveBeenCalledWith('u-1', 'update', 'passenger', 'p-1')
   })
 
   it('throws NotFound when the new location does not belong to user', async () => {
@@ -133,7 +152,7 @@ describe('update', () => {
     vi.mocked(locationDb.getLocation).mockResolvedValue(null)
 
     await expect(
-      update('p-1', 'u-1', { name: 'Alice', notes: '', homeUpdate: { type: 'switch', locationId: 'bad-loc' } })
+      update('p-1', 'u-1', { name: 'Alice', homeUpdate: { type: 'switch', locationId: 'bad-loc' } })
     ).rejects.toMatchObject({ errorKey: 'NotFound' })
   })
 
@@ -141,7 +160,7 @@ describe('update', () => {
     vi.mocked(db.getPassenger).mockResolvedValue(null)
 
     await expect(
-      update('p-1', 'other-user', { name: 'X', notes: '', homeUpdate: { type: 'none' } })
+      update('p-1', 'other-user', { name: 'X', homeUpdate: { type: 'none' } })
     ).rejects.toMatchObject({ errorKey: 'NotFound' })
   })
 })
@@ -166,6 +185,15 @@ describe('remove', () => {
 
     expect(db.deletePassenger).toHaveBeenCalledWith('p-1', 'u-1')
     expect(locationDb.deleteLocation).toHaveBeenCalledWith('loc-1', 'u-1')
+  })
+
+  it('logs a delete audit event', async () => {
+    vi.mocked(db.getPassenger).mockResolvedValue(mockPassenger)
+    vi.mocked(db.deletePassenger).mockResolvedValue(true)
+
+    await remove('p-1', 'u-1', false)
+
+    expect(auditDb.insertAuditLog).toHaveBeenCalledWith('u-1', 'delete', 'passenger', 'p-1')
   })
 
   it('throws NotFound when passenger does not exist', async () => {

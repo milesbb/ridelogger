@@ -10,7 +10,6 @@ router.use(requireAuth)
 const createPassengerSchema = z.object({
   name: z.string().min(1).max(100),
   homeAddress: z.string().min(1).max(255),
-  notes: z.string().max(1000).optional().default(""),
 })
 
 const homeUpdateSchema = z.discriminatedUnion("type", [
@@ -21,7 +20,6 @@ const homeUpdateSchema = z.discriminatedUnion("type", [
 
 const updatePassengerSchema = z.object({
   name: z.string().min(1).max(100),
-  notes: z.string().max(1000).optional().default(""),
   homeUpdate: homeUpdateSchema,
 })
 
@@ -35,16 +33,16 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
 router.post("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as AuthenticatedRequest).userId
-    const { name, homeAddress, notes } = validateBody(createPassengerSchema, req.body)
-    res.status(201).json(await svc.create(userId, { name, homeAddress, notes }))
+    const { name, homeAddress } = validateBody(createPassengerSchema, req.body)
+    res.status(201).json(await svc.create(userId, { name, homeAddress }))
   } catch (err) { next(err) }
 })
 
 router.put("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as AuthenticatedRequest).userId
-    const { name, notes, homeUpdate } = validateBody(updatePassengerSchema, req.body)
-    res.json(await svc.update(req.params.id, userId, { name, notes, homeUpdate }))
+    const { name, homeUpdate } = validateBody(updatePassengerSchema, req.body)
+    res.json(await svc.update(req.params.id, userId, { name, homeUpdate }))
   } catch (err) { next(err) }
 })
 

@@ -95,13 +95,12 @@ export const api = {
   },
   passengers: {
     list: () => apiFetch<Passenger[]>("/v1/passengers"),
-    create: (data: { name: string; homeAddress: string; notes: string }) =>
+    create: (data: { name: string; homeAddress: string }) =>
       apiFetch<Passenger>("/v1/passengers", { method: "POST", body: JSON.stringify(data) }),
     update: (
       id: string,
       data: {
         name: string
-        notes: string
         homeUpdate:
           | { type: "none" }
           | { type: "edit"; address: string }

@@ -1,5 +1,6 @@
 import * as db from '../data/passengers'
 import * as locationDb from '../data/locations'
+import { insertAuditLog } from '../data/auditLogs'
 import { geocodeAddress } from './geocode'
 import { Errors } from '../utils/errorTypes'
 
@@ -9,12 +10,14 @@ type HomeUpdate =
   | { type: 'switch'; locationId: string }
 
 export async function list(userId: string): Promise<db.Passenger[]> {
-  return db.listPassengers(userId)
+  const passengers = await db.listPassengers(userId)
+  await insertAuditLog(userId, 'view', 'passenger', null)
+  return passengers
 }
 
 export async function create(
   userId: string,
-  input: { name: string; homeAddress: string; notes: string },
+  input: { name: string; homeAddress: string },
 ): Promise<db.Passenger> {
   const coords = await geocodeAddress(input.homeAddress)
   const location = await locationDb.createLocation(userId, {
@@ -23,17 +26,18 @@ export async function create(
     lat: coords.lat,
     lon: coords.lon,
   })
-  return db.createPassenger(userId, {
+  const passenger = await db.createPassenger(userId, {
     name: input.name,
     home_location_id: location.id,
-    notes: input.notes || null,
   })
+  await insertAuditLog(userId, 'create', 'passenger', passenger.id)
+  return passenger
 }
 
 export async function update(
   id: string,
   userId: string,
-  input: { name: string; notes: string; homeUpdate: HomeUpdate },
+  input: { name: string; homeUpdate: HomeUpdate },
 ): Promise<db.Passenger> {
   const existing = await db.getPassenger(id, userId)
   if (!existing) throw Errors.NotFound('Passenger')
@@ -57,10 +61,10 @@ export async function update(
 
   const updated = await db.updatePassenger(id, userId, {
     name: input.name,
-    notes: input.notes || null,
     home_location_id: homeLocationId,
   })
   if (!updated) throw Errors.NotFound('Passenger')
+  await insertAuditLog(userId, 'update', 'passenger', id)
   return updated
 }
 
@@ -74,6 +78,7 @@ export async function remove(
 
   const homeLocationId = passenger.home_location_id
   await db.deletePassenger(id, userId)
+  await insertAuditLog(userId, 'delete', 'passenger', id)
 
   if (deleteHomeLocation) {
     await locationDb.deleteLocation(homeLocationId, userId)

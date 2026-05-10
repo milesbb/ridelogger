@@ -28,7 +28,6 @@ const mockPassenger = {
   home_address: '123 Main St',
   home_lat: -37.8136,
   home_lon: 144.9631,
-  notes: null,
   created_at: '2024-01-01T00:00:00.000Z',
   updated_at: '2024-01-01T00:00:00.000Z',
 }
@@ -41,7 +40,6 @@ function assertPassengerShape(body: Record<string, unknown>): void {
   expect(typeof body.home_address).toBe('string')
   expect(body.home_lat === null || typeof body.home_lat === 'number').toBe(true)
   expect(body.home_lon === null || typeof body.home_lon === 'number').toBe(true)
-  expect(body.notes === null || typeof body.notes === 'string').toBe(true)
   expect(typeof body.created_at).toBe('string')
   expect(typeof body.updated_at).toBe('string')
 }
@@ -83,7 +81,7 @@ describe('PUT /v1/passengers/:id', () => {
     vi.mocked(svc.update).mockResolvedValue(mockPassenger)
     const res = await request.put('/v1/passengers/p-1')
       .set('Authorization', 'Bearer test')
-      .send({ name: 'Alice', notes: '', homeUpdate: { type: 'none' } })
+      .send({ name: 'Alice', homeUpdate: { type: 'none' } })
     expect(res.status).toBe(200)
     assertPassengerShape(res.body)
   })
