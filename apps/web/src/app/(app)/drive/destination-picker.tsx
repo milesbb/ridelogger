@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { AddressFields, assembleAddress, type AustralianAddress } from "@/components/address-fields"
 import { api } from "@/lib/api/client"
+import { PrivacyLink } from "@/components/privacy-link"
 import type { Location } from "@/lib/api/types"
 
 interface Props {
@@ -125,6 +126,7 @@ export function DestinationPicker({
                 <Button type="submit" size="sm" disabled={saving}>{saving ? "Saving…" : "Save & select"}</Button>
                 <Button type="button" size="sm" variant="outline" onClick={() => setShowAddForm(false)}>Cancel</Button>
               </div>
+              <p className="text-xs text-muted-foreground">Address data is protected — <PrivacyLink /></p>
             </form>
           ) : (
             <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => setShowAddForm(true)}>

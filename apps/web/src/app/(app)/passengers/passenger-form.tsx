@@ -32,6 +32,7 @@ export function PassengerForm({ existing, onDone }: Props) {
   const [switchLocationId, setSwitchLocationId] = useState<string | null>(null)
   const [locations, setLocations] = useState<Location[]>([])
   const [loadingLocations, setLoadingLocations] = useState(false)
+  const [consentChecked, setConsentChecked] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
@@ -160,8 +161,25 @@ export function PassengerForm({ existing, onDone }: Props) {
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
-      <div className="flex gap-3 pt-2">
-        <Button type="submit" disabled={loading || (homeEditMode === "switch" && !switchLocationId)}>
+      <div className="flex items-start gap-2 pt-1">
+        <input
+          id="passenger-consent"
+          type="checkbox"
+          checked={consentChecked}
+          onChange={(e) => setConsentChecked(e.target.checked)}
+          className="mt-0.5 h-4 w-4 shrink-0 rounded border-input accent-primary"
+        />
+        <label htmlFor="passenger-consent" className="text-sm text-muted-foreground leading-snug">
+          I confirm I have permission to save this passenger&apos;s information.{" "}
+          <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">
+            See our privacy policy
+          </a>{" "}
+          for how their data is protected.
+        </label>
+      </div>
+
+      <div className="flex gap-3">
+        <Button type="submit" disabled={loading || !consentChecked || (homeEditMode === "switch" && !switchLocationId)}>
           {loading ? "Saving…" : existing ? "Save changes" : "Add passenger"}
         </Button>
         <Button type="button" variant="outline" onClick={onDone}>Cancel</Button>

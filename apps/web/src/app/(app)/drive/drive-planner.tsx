@@ -12,6 +12,7 @@ import { DriveResultsTable } from "./drive-results-table"
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core"
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+import { PrivacyLink } from "@/components/privacy-link"
 import type { Passenger, Location, AppSettings, DriveLegInput, DriveLegResult, SaveLegInput, DriveDayDetail } from "@/lib/api/types"
 
 interface Props {
@@ -262,6 +263,9 @@ function SaveSection({ date, legsForSave, onSaved }: SaveSectionProps) {
       <Button onClick={handleSave} disabled={saving || !date} className="w-full sm:w-auto">
         {saving ? "Saving…" : "Save drive day"}
       </Button>
+      <p className="text-xs text-muted-foreground">
+        Saving passenger data — <PrivacyLink />
+      </p>
     </div>
   )
 }
@@ -516,6 +520,9 @@ export function DrivePlanner({ passengers, locations, settings, onLocationsChang
           <Home className="h-3.5 w-3.5 shrink-0" />
           <span>Starting from: {settings.home_address}</span>
         </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Passenger data is stored securely — <PrivacyLink />
+        </p>
       </div>
 
       <PreviousDrives
@@ -581,7 +588,10 @@ export function DrivePlanner({ passengers, locations, settings, onLocationsChang
 
       <Dialog open={quickAddOpen} onOpenChange={setQuickAddOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Add new passenger</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Add new passenger</DialogTitle>
+            <p className="text-xs text-muted-foreground">Passenger data is protected — <PrivacyLink /></p>
+          </DialogHeader>
           <PassengerForm onDone={handleQuickAddDone} />
         </DialogContent>
       </Dialog>

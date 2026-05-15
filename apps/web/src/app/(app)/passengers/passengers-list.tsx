@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { PassengerForm } from "./passenger-form"
 import { api } from "@/lib/api/client"
+import { PrivacyLink } from "@/components/privacy-link"
 import type { Passenger } from "@/lib/api/types"
 
 interface Props {
@@ -37,17 +38,23 @@ export function PassengersList({ passengers, onRefresh }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Passengers</h1>
-        <Dialog open={addOpen} onOpenChange={setAddOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm"><Plus className="h-4 w-4 mr-1" />Add</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Add passenger</DialogTitle></DialogHeader>
-            <PassengerForm onDone={() => { setAddOpen(false); onRefresh() }} />
-          </DialogContent>
-        </Dialog>
+      <div>
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-semibold">Passengers</h1>
+          <Dialog open={addOpen} onOpenChange={setAddOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm"><Plus className="h-4 w-4 mr-1" />Add</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add passenger</DialogTitle>
+                <p className="text-xs text-muted-foreground">Passenger data is protected — <PrivacyLink /></p>
+              </DialogHeader>
+              <PassengerForm onDone={() => { setAddOpen(false); onRefresh() }} />
+            </DialogContent>
+          </Dialog>
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">Passenger data is stored securely — <PrivacyLink /></p>
       </div>
 
       {passengers.length > 0 && (
@@ -80,7 +87,10 @@ export function PassengersList({ passengers, onRefresh }: Props) {
                     <Button variant="ghost" size="icon" aria-label="Edit"><Pencil className="h-4 w-4" /></Button>
                   </DialogTrigger>
                   <DialogContent>
-                    <DialogHeader><DialogTitle>Edit passenger</DialogTitle></DialogHeader>
+                    <DialogHeader>
+                      <DialogTitle>Edit passenger</DialogTitle>
+                      <p className="text-xs text-muted-foreground">Passenger data is protected — <PrivacyLink /></p>
+                    </DialogHeader>
                     <PassengerForm existing={p} onDone={() => { setEditingId(null); onRefresh() }} />
                   </DialogContent>
                 </Dialog>

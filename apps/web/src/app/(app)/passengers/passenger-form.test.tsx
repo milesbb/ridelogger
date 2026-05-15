@@ -53,6 +53,10 @@ function fillNewAddress(street: string, suburb: string, state: string, postcode:
   fireEvent.change(screen.getByLabelText(/postcode/i), { target: { value: postcode } })
 }
 
+function tickConsent() {
+  fireEvent.click(screen.getByLabelText(/i confirm i have permission/i))
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   onDone.mockReset()
@@ -69,12 +73,29 @@ describe('PassengerForm — create mode', () => {
     expect(screen.queryByLabelText(/notes/i)).not.toBeInTheDocument()
   })
 
+  it('renders consent checkbox unchecked by default', () => {
+    render(<PassengerForm onDone={onDone} />)
+    expect(screen.getByLabelText(/i confirm i have permission/i)).not.toBeChecked()
+  })
+
+  it('disables submit button when consent is not checked', () => {
+    render(<PassengerForm onDone={onDone} />)
+    expect(screen.getByRole('button', { name: /add passenger/i })).toBeDisabled()
+  })
+
+  it('enables submit button after consent is checked', () => {
+    render(<PassengerForm onDone={onDone} />)
+    tickConsent()
+    expect(screen.getByRole('button', { name: /add passenger/i })).not.toBeDisabled()
+  })
+
   it('calls api.passengers.create with assembled address on submit', async () => {
     vi.mocked(api.passengers.create).mockResolvedValue(existing)
     render(<PassengerForm onDone={onDone} />)
 
     fireEvent.change(screen.getByLabelText(/^name/i), { target: { value: 'Bob Jones' } })
     fillNewAddress('99 Bob Rd', 'Suburb', 'VIC', '3000')
+    tickConsent()
     fireEvent.submit(screen.getByRole('button', { name: /add passenger/i }).closest('form')!)
 
     await waitFor(() =>
@@ -91,6 +112,7 @@ describe('PassengerForm — create mode', () => {
 
     fireEvent.change(screen.getByLabelText(/^name/i), { target: { value: 'Bob' } })
     fillNewAddress('1 Bob St', 'Suburb', 'VIC', '3000')
+    tickConsent()
     fireEvent.submit(screen.getByRole('button', { name: /add passenger/i }).closest('form')!)
 
     await waitFor(() => expect(onDone).toHaveBeenCalled())
@@ -102,6 +124,7 @@ describe('PassengerForm — create mode', () => {
 
     fireEvent.change(screen.getByLabelText(/^name/i), { target: { value: 'Bob' } })
     fillNewAddress('1 Bob St', 'Suburb', 'VIC', '3000')
+    tickConsent()
     fireEvent.submit(screen.getByRole('button', { name: /add passenger/i }).closest('form')!)
 
     await waitFor(() => expect(screen.getByText('Address not found')).toBeInTheDocument())
@@ -115,6 +138,7 @@ describe('PassengerForm — create mode', () => {
 
     fireEvent.change(screen.getByLabelText(/^name/i), { target: { value: 'Bob' } })
     fillNewAddress('1 Bob St', 'Suburb', 'VIC', '3000')
+    tickConsent()
     fireEvent.submit(screen.getByRole('button', { name: /add passenger/i }).closest('form')!)
 
     await waitFor(() => expect(screen.getByRole('button', { name: /saving/i })).toBeDisabled())
@@ -143,6 +167,16 @@ describe('PassengerForm — edit mode', () => {
     expect(screen.getByText(existing.home_address)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /edit address/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /use a saved location/i })).toBeInTheDocument()
+  })
+
+  it('renders consent checkbox unchecked by default', () => {
+    render(<PassengerForm existing={existing} onDone={onDone} />)
+    expect(screen.getByLabelText(/i confirm i have permission/i)).not.toBeChecked()
+  })
+
+  it('disables submit button when consent is not checked', () => {
+    render(<PassengerForm existing={existing} onDone={onDone} />)
+    expect(screen.getByRole('button', { name: /save changes/i })).toBeDisabled()
   })
 
   it('clicking Edit address shows structured address fields and cancel', () => {
@@ -176,6 +210,7 @@ describe('PassengerForm — edit mode', () => {
     vi.mocked(api.passengers.update).mockResolvedValue(existing)
     render(<PassengerForm existing={existing} onDone={onDone} />)
 
+    tickConsent()
     fireEvent.submit(screen.getByRole('button', { name: /save changes/i }).closest('form')!)
 
     await waitFor(() =>
@@ -192,6 +227,7 @@ describe('PassengerForm — edit mode', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /edit address/i }))
     fireEvent.change(screen.getByLabelText(/street address/i), { target: { value: '42 New Rd' } })
+    tickConsent()
     fireEvent.submit(screen.getByRole('button', { name: /save changes/i }).closest('form')!)
 
     await waitFor(() =>
@@ -233,6 +269,7 @@ describe('PassengerForm — edit mode', () => {
     vi.mocked(api.locations.list).mockResolvedValue(savedLocations)
     render(<PassengerForm existing={existing} onDone={onDone} />)
 
+    tickConsent()
     fireEvent.click(screen.getByRole('button', { name: /use a saved location/i }))
     await waitFor(() => expect(screen.getByText('Community Centre')).toBeInTheDocument())
 
@@ -244,6 +281,7 @@ describe('PassengerForm — edit mode', () => {
     vi.mocked(api.passengers.update).mockResolvedValue(existing)
     render(<PassengerForm existing={existing} onDone={onDone} />)
 
+    tickConsent()
     fireEvent.click(screen.getByRole('button', { name: /use a saved location/i }))
     await waitFor(() => expect(screen.getByText('Community Centre')).toBeInTheDocument())
 
@@ -264,6 +302,7 @@ describe('PassengerForm — edit mode', () => {
     vi.mocked(api.locations.list).mockResolvedValue(savedLocations)
     render(<PassengerForm existing={existing} onDone={onDone} />)
 
+    tickConsent()
     fireEvent.click(screen.getByRole('button', { name: /use a saved location/i }))
     await waitFor(() => expect(screen.getByText('Community Centre')).toBeInTheDocument())
 
@@ -277,6 +316,7 @@ describe('PassengerForm — edit mode', () => {
     vi.mocked(api.passengers.update).mockResolvedValue(existing)
     render(<PassengerForm existing={existing} onDone={onDone} />)
 
+    tickConsent()
     fireEvent.submit(screen.getByRole('button', { name: /save changes/i }).closest('form')!)
 
     await waitFor(() => expect(onDone).toHaveBeenCalled())
@@ -286,6 +326,7 @@ describe('PassengerForm — edit mode', () => {
     vi.mocked(api.passengers.update).mockRejectedValue(new Error('Network error'))
     render(<PassengerForm existing={existing} onDone={onDone} />)
 
+    tickConsent()
     fireEvent.submit(screen.getByRole('button', { name: /save changes/i }).closest('form')!)
 
     await waitFor(() => expect(screen.getByText('Network error')).toBeInTheDocument())

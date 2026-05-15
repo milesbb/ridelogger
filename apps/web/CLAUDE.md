@@ -40,6 +40,12 @@ All addresses in this app are stored as `locations` rows on the API. Any form or
 - Never rely on hover-only interactions. Every action must be reachable by touch.
 - Before marking any UI task complete, verify it at a narrow mobile viewport and a typical laptop viewport.
 
+## Privacy policy
+
+The source of truth for the privacy policy is `PRIVACY_POLICY.md` at the repo root. The page at `src/app/privacy/page.tsx` must always reflect it exactly.
+
+**Whenever `PRIVACY_POLICY.md` is edited, you must also update `src/app/privacy/page.tsx` to match.** This is not optional — both files must stay in sync. The page renders the policy as React components; update the content, structure, dates, and any linked URLs to match the markdown source.
+
 ## Adding a new page
 
 1. Create `src/app/<route>/page.tsx` as a client component (`"use client"`) if it needs auth or interactivity.

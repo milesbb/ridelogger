@@ -91,6 +91,10 @@ All production secrets are stored in AWS SSM Parameter Store. These must exist b
 | `/ridelogger/production/jwt-secret` | SecureString | `openssl rand -hex 64` |
 | `/ridelogger/production/ors-api-key` | SecureString | From openrouteservice.org |
 
+## Privacy
+
+See [PRIVACY_POLICY.md](./PRIVACY_POLICY.md) for the full privacy policy (Australian Privacy Principles compliant). The policy is also available in the app at `/privacy`.
+
 ## Swapping the routing provider
 
 1. Create `packages/routing/src/<provider>.ts` implementing `RoutingService`

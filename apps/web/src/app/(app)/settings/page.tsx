@@ -8,6 +8,7 @@ import { ChangePasswordForm } from "./change-password-form"
 import { DeleteAccountSection } from "./delete-account-section"
 import { DriveLogPreferenceForm } from "./drive-log-preference-form"
 import { ThemePreferenceForm } from "./theme-preference-form"
+import { PrivacyLink } from "@/components/privacy-link"
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<AppSettings | null>(null)
@@ -36,6 +37,10 @@ export default function SettingsPage() {
       <ChangePasswordForm />
       <hr className="border-border" />
       <DeleteAccountSection />
+      <hr className="border-border" />
+      <p className="text-sm text-muted-foreground">
+        Read our <PrivacyLink /> to learn how your data is stored and protected.
+      </p>
     </div>
   )
 }
