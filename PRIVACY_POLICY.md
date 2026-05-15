@@ -51,7 +51,7 @@ We do not use personal information for direct marketing, profiling, or any purpo
 
 ## 4. How we hold personal information and our security practices
 
-All personal information is stored in a PostgreSQL database hosted on **AWS** in the **ap-southeast-2 (Sydney)** region.
+All personal information is stored in a PostgreSQL database provided by **Supabase**, with data hosted in the **ap-southeast-2 (Sydney)** region.
 
 Security measures include:
 - Passwords are hashed using bcrypt before storage and are never stored or logged in plaintext
@@ -84,7 +84,8 @@ We disclose personal information to the following overseas recipients as part of
 |---|---|---|---|
 | **OpenRouteService** | Germany | Calculating routes and distances — addresses from your drive plan are sent to their API | [openrouteservice.org/privacy](https://ask.openrouteservice.org/privacy) |
 | **Vercel** | United States | Hosting the web frontend — standard request metadata is processed per their privacy policy | [vercel.com/legal/privacy-policy](https://vercel.com/legal/privacy-policy) |
-| **AWS** | Australia (ap-southeast-2) and potentially other regions for infrastructure services | Hosting the API and database | [aws.amazon.com/privacy](https://aws.amazon.com/privacy) |
+| **Supabase** | United States (data stored in Australia, ap-southeast-2) | Hosting the database — all personal information at rest | [supabase.com/privacy](https://supabase.com/privacy) |
+| **AWS** | Australia (ap-southeast-2) and potentially other regions for infrastructure services | Hosting the API | [aws.amazon.com/privacy](https://aws.amazon.com/privacy) |
 
 Before disclosing personal information to these overseas recipients, we take reasonable steps to ensure they handle information in a way consistent with the APPs. By using RideLogger, you acknowledge that your personal information may be disclosed overseas. Under APP 8.1, we remain accountable for how overseas recipients handle your information unless an exception under APP 8.2 applies.
 

@@ -77,8 +77,9 @@ export default function PrivacyPage() {
 
         <Section title="4. How we hold personal information and our security practices">
           <p>
-            All personal information is stored in a PostgreSQL database hosted on{" "}
-            <strong>AWS</strong> in the <strong>ap-southeast-2 (Sydney)</strong> region.
+            All personal information is stored in a PostgreSQL database provided by{" "}
+            <strong>Supabase</strong>, with data hosted in the{" "}
+            <strong>ap-southeast-2 (Sydney)</strong> region.
           </p>
           <p>Security measures include:</p>
           <ul>
@@ -179,12 +180,24 @@ export default function PrivacyPage() {
                     </ExternalLink>
                   </Td>
                 </tr>
+                <tr className="border-b border-border/50">
+                  <Td>
+                    <strong>Supabase</strong>
+                  </Td>
+                  <Td>United States (data stored in Australia, ap-southeast-2)</Td>
+                  <Td>Hosting the database — all personal information at rest</Td>
+                  <Td>
+                    <ExternalLink href="https://supabase.com/privacy">
+                      supabase.com/privacy
+                    </ExternalLink>
+                  </Td>
+                </tr>
                 <tr>
                   <Td>
                     <strong>AWS</strong>
                   </Td>
                   <Td>Australia (ap-southeast-2) and potentially other regions</Td>
-                  <Td>Hosting the API and database</Td>
+                  <Td>Hosting the API</Td>
                   <Td>
                     <ExternalLink href="https://aws.amazon.com/privacy">
                       aws.amazon.com/privacy
