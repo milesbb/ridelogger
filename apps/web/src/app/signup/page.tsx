@@ -97,6 +97,12 @@ export default function SignupPage() {
             Sign in
           </a>
         </p>
+
+        <p className="text-center text-xs text-muted-foreground">
+          <a href="/privacy" className="underline underline-offset-2 hover:text-foreground">
+            Privacy policy
+          </a>
+        </p>
       </div>
     </div>
   )
