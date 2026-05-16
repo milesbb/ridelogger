@@ -78,13 +78,13 @@ jobs:
         run: |
           FLYWAY_URL=$(aws ssm get-parameter \
             --name /ridelogger/production/flyway-url \
-            --with-decryption --query Parameter.Value --output text --region ap-southeast-2)
+            --with-decryption --query Parameter.Value --output text --region $AWS_REGION)
           DB_USER=$(aws ssm get-parameter \
             --name /ridelogger/production/database-user \
-            --with-decryption --query Parameter.Value --output text --region ap-southeast-2)
+            --with-decryption --query Parameter.Value --output text --region $AWS_REGION)
           DB_PASS=$(aws ssm get-parameter \
             --name /ridelogger/production/database-password \
-            --with-decryption --query Parameter.Value --output text --region ap-southeast-2)
+            --with-decryption --query Parameter.Value --output text --region $AWS_REGION)
           docker run --rm \
             -v ${{ github.workspace }}/db/migrations:/flyway/sql \
             -e FLYWAY_URL="$FLYWAY_URL" \
