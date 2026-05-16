@@ -1,8 +1,7 @@
 import { Pool, PoolClient } from 'pg'
+import { supabaseCa } from '../certs/supabase-ca'
 import { getDatabaseParameters } from './aws/parameters'
 import logger from './logging'
-// @ts-expect-error webpack asset/source import
-import supabaseCa from '../../certs/supabase-ca.crt'
 
 let pool: Pool | null = null
 
