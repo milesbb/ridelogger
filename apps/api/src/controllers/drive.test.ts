@@ -171,7 +171,7 @@ describe('DELETE /days/:id', () => {
 
 describe('GET /days/export', () => {
   it('returns export legs for a valid date range', async () => {
-    const exportLeg = { ...mockLeg, drive_date: '2026-05-06' }
+    const exportLeg = { ...mockLeg, drive_date: '2026-05-06', passenger_names: ['John'] }
     vi.mocked(exportDriveDays).mockResolvedValue([exportLeg])
     const res = await request.get('/days/export?from=2026-05-01&to=2026-05-31')
     expect(res.status).toBe(200)
