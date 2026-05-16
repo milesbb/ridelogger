@@ -1,13 +1,13 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { api } from "@/lib/api/client"
 import type { Passenger, Location, AppSettings, DriveDayDetail } from "@/lib/api/types"
 import { DrivePlanner } from "./drive-planner"
+import { HomeAddressSetupModal } from "./home-address-setup-modal"
 
 export default function DrivePage() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const fromDayId = searchParams.get("from")
 
@@ -29,17 +29,16 @@ export default function DrivePage() {
       : Promise.all([baseData, Promise.resolve(undefined)])
 
     allData.then(([[s, p, l], detail]) => {
-      if (!s) { router.replace("/settings"); return }
-      setSettings(s)
+      if (s) setSettings(s)
       setPassengers(p)
       setLocations(l)
       if (detail) setInitialDayDetail(detail)
       setLoading(false)
     })
-  }, [router, fromDayId])
+  }, [fromDayId])
 
   if (loading) return <p className="text-sm text-muted-foreground py-8 text-center">Loading…</p>
-  if (!settings) return null
+  if (!settings) return <HomeAddressSetupModal onComplete={setSettings} />
   return (
     <DrivePlanner
       passengers={passengers}
