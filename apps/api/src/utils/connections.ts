@@ -17,7 +17,7 @@ async function buildPool(): Promise<Pool> {
 
   const p = new Pool({
     connectionString,
-    ssl: process.env.NODE_ENV === 'production' ? true : false,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
   })
 
   p.on('error', (err) => logger.error('pg pool error', { err }))
