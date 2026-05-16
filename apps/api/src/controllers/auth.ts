@@ -37,14 +37,16 @@ const registerSchema = z.object({
   username: z.string().min(2).max(50),
   password: z.string().min(8).max(128)
     .regex(/[A-Z]/, "Password must contain an uppercase letter")
-    .regex(/[0-9]/, "Password must contain a number"),
+    .regex(/[0-9]/, "Password must contain a number")
+    .regex(/[^A-Za-z0-9]/, "Password must contain a special character"),
 })
 
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1).max(128),
   newPassword: z.string().min(8).max(128)
     .regex(/[A-Z]/, "New password must contain an uppercase letter")
-    .regex(/[0-9]/, "New password must contain a number"),
+    .regex(/[0-9]/, "New password must contain a number")
+    .regex(/[^A-Za-z0-9]/, "New password must contain a special character"),
 })
 
 const deleteAccountSchema = z.object({

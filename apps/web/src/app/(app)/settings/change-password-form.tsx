@@ -67,6 +67,7 @@ export function ChangePasswordForm() {
             maxLength={128}
             autoComplete="new-password"
           />
+          <p className="text-xs text-muted-foreground">At least 8 characters with an uppercase letter, a number, and a special character</p>
         </div>
         <div className="space-y-2">
           <label htmlFor="confirm-password" className="text-sm font-medium">Confirm new password</label>

@@ -79,6 +79,7 @@ export default function SignupPage() {
               autoComplete="new-password"
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
+            <p className="text-xs text-muted-foreground">At least 8 characters with an uppercase letter, a number, and a special character</p>
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
