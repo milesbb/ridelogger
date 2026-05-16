@@ -50,6 +50,13 @@ export function HomeAddressSetupModal({ onComplete }: Props) {
           <Button type="submit" disabled={loading} className="w-full">
             {loading ? "Saving…" : "Save and start planning"}
           </Button>
+          <p className="text-xs text-muted-foreground text-center">
+            By continuing you agree to our{" "}
+            <a href="/privacy" className="underline underline-offset-4 hover:text-foreground">
+              privacy policy
+            </a>
+            .
+          </p>
         </form>
       </DialogContent>
     </Dialog>
