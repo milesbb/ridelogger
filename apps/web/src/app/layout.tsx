@@ -11,8 +11,15 @@ const geistSans = localFont({
 })
 
 export const metadata: Metadata = {
-  title: "RideLogger",
-  description: "Volunteer drive planner",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+  title: { default: "RideLogger", template: "%s — RideLogger" },
+  description:
+    "Plan volunteer drive days in minutes. Save passenger profiles, named locations, and get a distance and time table ready to copy onto your paper form.",
+  openGraph: {
+    title: "RideLogger",
+    description: "Volunteer drive planner for community transport coordinators.",
+    type: "website",
+  },
   manifest: "/site.webmanifest",
   appleWebApp: { title: "RideLogger" },
   icons: {

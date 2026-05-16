@@ -1,3 +1,11 @@
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Privacy Policy",
+  description:
+    "How RideLogger collects, holds, and uses personal information in accordance with the Australian Privacy Principles.",
+}
+
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-background px-4 py-12">

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { axe, configureAxe } from 'vitest-axe'
+import { configureAxe } from 'vitest-axe'
 import { DestinationPicker } from './destination-picker'
 import { api } from '@/lib/api/client'
 import type { Location } from '@/lib/api/types'
