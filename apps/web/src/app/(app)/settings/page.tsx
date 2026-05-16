@@ -41,6 +41,17 @@ export default function SettingsPage() {
       <p className="text-sm text-muted-foreground">
         Read our <PrivacyLink /> to learn how your data is stored and protected.
       </p>
+      <p className="text-sm text-muted-foreground">
+        More from{" "}
+        <a
+          href="https://github.com/milesbb"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-2 hover:text-foreground transition-colors"
+        >
+          Miles Bailey-Braendgaard
+        </a>
+      </p>
     </div>
   )
 }

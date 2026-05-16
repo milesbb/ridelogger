@@ -112,6 +112,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         )}
       </header>
       <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-6">{children}</main>
+      <footer className="border-t mt-auto">
+        <div className="max-w-2xl mx-auto px-4 py-4 text-center text-xs text-muted-foreground">
+          More from{" "}
+          <a
+            href="https://github.com/milesbb"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-2 hover:text-foreground transition-colors"
+          >
+            Miles Bailey-Braendgaard
+          </a>
+        </div>
+      </footer>
     </div>
   )
 }
