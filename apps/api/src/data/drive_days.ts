@@ -30,6 +30,7 @@ export interface Leg {
 
 export interface ExportLeg extends Leg {
   drive_date: string
+  passenger_names: string[]
 }
 
 export interface DriveDaySummary extends DriveDay {
@@ -256,11 +257,21 @@ export async function getLegsForExport(
     `SELECT l.*,
        to_char(dd.date, 'YYYY-MM-DD') AS drive_date,
        fl.name AS from_location_name,
-       tl.name AS to_location_name
+       tl.name AS to_location_name,
+       pn.passenger_names
      FROM legs l
      JOIN drive_days dd ON dd.id = l.drive_day_id
      LEFT JOIN locations fl ON fl.id = l.from_location_id
      LEFT JOIN locations tl ON tl.id = l.to_location_id
+     LEFT JOIN LATERAL (
+       SELECT COALESCE(
+         array_agg(DISTINCT p2.name ORDER BY p2.name) FILTER (WHERE p2.name IS NOT NULL),
+         '{}'::text[]
+       ) AS passenger_names
+       FROM legs l2
+       LEFT JOIN passengers p2 ON p2.id = l2.passenger_id
+       WHERE l2.drive_day_id = l.drive_day_id
+     ) pn ON true
      WHERE dd.user_id = $1
        AND dd.date >= $2::date
        AND dd.date <= $3::date
@@ -270,6 +281,7 @@ export async function getLegsForExport(
   return rows.map((r) => ({
     ...parseLeg(r),
     drive_date: col<string>(r, 'drive_date'),
+    passenger_names: col<string[]>(r, 'passenger_names'),
   }))
 }
 

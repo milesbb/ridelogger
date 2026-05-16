@@ -267,7 +267,7 @@ describe('getPassengerDropoffs', () => {
 
 describe('exportDriveDays', () => {
   it('returns export legs for a date range', async () => {
-    const exportLeg = { ...mockLeg, drive_date: '2026-05-06' }
+    const exportLeg = { ...mockLeg, drive_date: '2026-05-06', passenger_names: ['John'] }
     vi.mocked(driveDaysDb.getLegsForExport).mockResolvedValue([exportLeg])
     const result = await exportDriveDays('u-1', '2026-05-01', '2026-05-31')
     expect(result).toEqual([exportLeg])

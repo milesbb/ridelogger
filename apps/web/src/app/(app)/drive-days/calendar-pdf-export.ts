@@ -14,8 +14,25 @@ const DOW_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 const WEEKEND_FILL: [number, number, number] = [249, 250, 251]
 const BORDER_COLOUR: [number, number, number] = [229, 231, 235]
 
-function truncate(s: string, max: number): string {
-  return s.length > max ? `${s.slice(0, max)}...` : s
+function formatPassengers(names: string[]): string {
+  if (names.length === 0) return "No passengers"
+  const MAX_CHARS = 26
+  let result = names[0]
+  let shown = 1
+  for (let i = 1; i < names.length; i++) {
+    const candidate = `${result}, ${names[i]}`
+    if (candidate.length > MAX_CHARS) break
+    result = candidate
+    shown = i + 1
+  }
+  const remaining = names.length - shown
+  if (remaining > 0) return `${result} and ${remaining} more passengers...`
+  return result
+}
+
+interface DayEntry {
+  drive_day_id: string
+  passenger_names: string[]
 }
 
 export function getMonthsInRange(from: string, to: string): Array<{ year: number; month: number }> {
@@ -32,11 +49,16 @@ export function getMonthsInRange(from: string, to: string): Array<{ year: number
   return result
 }
 
-function groupLegsByDate(legs: ExportLeg[]): Map<string, ExportLeg[]> {
-  const map = new Map<string, ExportLeg[]>()
+function groupDaysByDate(legs: ExportLeg[]): Map<string, DayEntry[]> {
+  const map = new Map<string, DayEntry[]>()
+  const seen = new Map<string, DayEntry>()
   for (const leg of legs) {
-    const existing = map.get(leg.drive_date)
-    if (existing) { existing.push(leg) } else { map.set(leg.drive_date, [leg]) }
+    if (!seen.has(leg.drive_day_id)) {
+      const entry: DayEntry = { drive_day_id: leg.drive_day_id, passenger_names: leg.passenger_names }
+      seen.set(leg.drive_day_id, entry)
+      const existing = map.get(leg.drive_date)
+      if (existing) { existing.push(entry) } else { map.set(leg.drive_date, [entry]) }
+    }
   }
   return map
 }
@@ -47,7 +69,7 @@ async function drawCalendarPage(
   month: number,
   from: string,
   to: string,
-  legsByDate: Map<string, ExportLeg[]>,
+  daysByDate: Map<string, DayEntry[]>,
 ): Promise<void> {
   const headerEndY = await addPdfBrandHeader(doc, undefined, from, to, HEADER_MARGIN)
 
@@ -94,24 +116,33 @@ async function drawCalendarPage(
 
       if (!cell.isoDate) continue
 
-      const dayLegs = legsByDate.get(cell.isoDate) ?? []
-      const uniqueLegs = dedupLegs(dayLegs)
-      const shown = uniqueLegs.slice(0, 2)
-      const extra = uniqueLegs.length - 2
+      const days = daysByDate.get(cell.isoDate) ?? []
+      const shown = days.slice(0, 2)
+      const extra = days.length - 2
+      const BOX_H = 4.5
+      const BOX_GAP = 1.2
 
-      doc.setFont("helvetica", "normal")
-      doc.setFontSize(5.5)
-      doc.setTextColor(30, 64, 175)
+      for (let di = 0; di < shown.length; di++) {
+        const bx = x + 1.5
+        const by = y + 6 + di * (BOX_H + BOX_GAP)
+        const bw = COL_W - 3
 
-      for (let li = 0; li < shown.length; li++) {
-        const label = truncate(pdfSafe(shown[li].label), 32)
-        doc.text(label, x + 1.5, y + 8 + li * 4.5)
+        doc.setFillColor(219, 234, 254)
+        doc.setDrawColor(147, 197, 253)
+        doc.setLineWidth(0.2)
+        doc.rect(bx, by, bw, BOX_H, "FD")
+
+        doc.setFont("helvetica", "normal")
+        doc.setFontSize(5)
+        doc.setTextColor(30, 64, 175)
+        doc.text(formatPassengers(shown[di].passenger_names), bx + 1, by + BOX_H / 2 + 0.8)
       }
 
       if (extra > 0) {
-        doc.setFontSize(5)
+        doc.setFontSize(4.5)
+        doc.setFont("helvetica", "normal")
         doc.setTextColor(100, 100, 100)
-        doc.text(`+${extra} more`, x + 1.5, y + 8 + shown.length * 4.5)
+        doc.text(`+${extra} more days`, x + 1.5, y + 6 + shown.length * (BOX_H + BOX_GAP) + 2)
       }
 
       doc.setTextColor(0, 0, 0)
@@ -129,12 +160,12 @@ export async function exportToCalendarPdf(
 
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" })
   const months = getMonthsInRange(from, to)
-  const legsByDate = groupLegsByDate(legs)
+  const daysByDate = groupDaysByDate(legs)
 
   for (let pageIdx = 0; pageIdx < months.length; pageIdx++) {
     if (pageIdx > 0) doc.addPage()
     const { year, month } = months[pageIdx]
-    await drawCalendarPage(doc, year, month, from, to, legsByDate)
+    await drawCalendarPage(doc, year, month, from, to, daysByDate)
   }
 
   doc.save(`${filename}.pdf`)
@@ -171,21 +202,13 @@ export async function exportToListAndCalendarPdf(
   })
 
   const months = getMonthsInRange(from, to)
-  const legsByDate = groupLegsByDate(legs)
+  const daysByDate = groupDaysByDate(legs)
 
   for (const { year, month } of months) {
     doc.addPage()
-    await drawCalendarPage(doc, year, month, from, to, legsByDate)
+    await drawCalendarPage(doc, year, month, from, to, daysByDate)
   }
 
   doc.save(`${filename}.pdf`)
 }
 
-function dedupLegs(legs: ExportLeg[]): ExportLeg[] {
-  const seen = new Set<string>()
-  return legs.filter((leg) => {
-    if (seen.has(leg.drive_day_id)) return false
-    seen.add(leg.drive_day_id)
-    return true
-  })
-}

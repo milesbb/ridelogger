@@ -99,6 +99,7 @@ export interface SavedLeg {
 
 export interface ExportLeg extends SavedLeg {
   drive_date: string
+  passenger_names: string[]
 }
 
 export interface DriveDayDetail extends DriveDaySummary {
