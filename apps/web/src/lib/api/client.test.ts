@@ -49,6 +49,16 @@ describe('api.auth.login', () => {
     expect(result.accessToken).toBe('acc-tok')
   })
 
+  it('throws the server message when credentials are invalid (401 + InvalidCredentials errorKey)', async () => {
+    mockFetch.mockResolvedValueOnce(
+      fail(401, { message: 'Invalid email or password', errorKey: 'InvalidCredentials' }),
+    )
+
+    await expect(api.auth.login('jo', 'wrong')).rejects.toThrow('Invalid email or password')
+    // Must not attempt a token refresh — only one fetch call
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+  })
+
   it('throws when the server returns a non-401 error', async () => {
     mockFetch.mockResolvedValueOnce(fail(422, { message: 'Invalid credentials' }))
 

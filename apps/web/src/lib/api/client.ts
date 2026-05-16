@@ -47,6 +47,10 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
   let res = await makeRequest(token)
 
   if (res.status === 401) {
+    const body = await res.json().catch(() => ({})) as { errorKey?: string; message?: string }
+    if (body.errorKey && body.errorKey !== "Unauthorized") {
+      throw new Error(body.message ?? "Request failed")
+    }
     const newToken = await tryRefresh()
     if (!newToken) {
       clearToken()
