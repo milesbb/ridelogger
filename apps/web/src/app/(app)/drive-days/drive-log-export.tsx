@@ -6,7 +6,7 @@ import { api } from "@/lib/api/client"
 import type { ExportLeg } from "@/lib/api/types"
 import type { ExportColumn, ExportRow } from "@/lib/export-utils"
 import { exportToCsv, exportToExcel, exportToPdf } from "@/lib/export-utils"
-import { exportToCalendarPdf } from "./calendar-pdf-export"
+import { exportToCalendarPdf, exportToListAndCalendarPdf } from "./calendar-pdf-export"
 
 interface Props {
   defaultFrom: string
@@ -32,12 +32,23 @@ function buildRows(legs: ExportLeg[], showLocationNames: boolean): ExportRow[] {
   }))
 }
 
+type Format = "pdf" | "csv" | "excel"
+type PdfLayout = "list" | "calendar" | "both"
+
+const FORMAT_LABELS: Record<Format, string> = { pdf: "PDF", csv: "CSV", excel: "Excel" }
+const PDF_LAYOUT_OPTIONS: { value: PdfLayout; label: string }[] = [
+  { value: "list", label: "List" },
+  { value: "calendar", label: "Calendar" },
+  { value: "both", label: "List and calendar" },
+]
+
 export function DriveLogExport({ defaultFrom, defaultTo }: Props) {
   const [from, setFrom] = useState(defaultFrom)
   const [to, setTo] = useState(defaultTo)
   const [includePersonal, setIncludePersonal] = useState(false)
   const [showLocationNames, setShowLocationNames] = useState(true)
-  const [calendarPdf, setCalendarPdf] = useState(false)
+  const [format, setFormat] = useState<Format>("pdf")
+  const [pdfLayout, setPdfLayout] = useState<PdfLayout>("list")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
@@ -56,27 +67,30 @@ export function DriveLogExport({ defaultFrom, defaultTo }: Props) {
   }
 
   const filename = `drive-log-${from}-to-${to}`
-  const title = `Drive Log — ${from} to ${to}`
 
-  async function handleCsv() {
+  async function handleExport() {
     const legs = await fetchLegs()
     if (!legs) return
-    exportToCsv(filename, COLUMNS, buildRows(legs, showLocationNames))
-  }
 
-  async function handleExcel() {
-    const legs = await fetchLegs()
-    if (!legs) return
-    await exportToExcel(filename, COLUMNS, buildRows(legs, showLocationNames))
-  }
+    if (format === "csv") {
+      exportToCsv(filename, COLUMNS, buildRows(legs, showLocationNames))
+      return
+    }
+    if (format === "excel") {
+      await exportToExcel(filename, COLUMNS, buildRows(legs, showLocationNames))
+      return
+    }
 
-  async function handlePdf() {
-    const legs = await fetchLegs()
-    if (!legs) return
-    if (calendarPdf) {
+    const rows = buildRows(legs, showLocationNames)
+    if (pdfLayout === "calendar") {
       await exportToCalendarPdf(filename, from, to, legs)
+    } else if (pdfLayout === "both") {
+      await exportToListAndCalendarPdf(filename, from, to, legs, COLUMNS, rows)
     } else {
-      await exportToPdf(filename, COLUMNS, buildRows(legs, showLocationNames), title)
+      await exportToPdf(filename, COLUMNS, rows, "Drive Log", {
+        dateRange: { from, to },
+        landscape: true,
+      })
     }
   }
 
@@ -85,8 +99,9 @@ export function DriveLogExport({ defaultFrom, defaultTo }: Props) {
       <p className="text-sm font-medium">Export drive log</p>
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="flex-1 space-y-1">
-          <label className="text-xs text-muted-foreground">From</label>
+          <label htmlFor="drive-log-from" className="text-xs text-muted-foreground">From</label>
           <input
+            id="drive-log-from"
             type="date"
             value={from}
             onChange={(e) => { if (e.target.value) setFrom(e.target.value) }}
@@ -94,8 +109,9 @@ export function DriveLogExport({ defaultFrom, defaultTo }: Props) {
           />
         </div>
         <div className="flex-1 space-y-1">
-          <label className="text-xs text-muted-foreground">To</label>
+          <label htmlFor="drive-log-to" className="text-xs text-muted-foreground">To</label>
           <input
+            id="drive-log-to"
             type="date"
             value={to}
             onChange={(e) => { if (e.target.value) setTo(e.target.value) }}
@@ -122,28 +138,49 @@ export function DriveLogExport({ defaultFrom, defaultTo }: Props) {
           />
           Show location names
         </label>
-        <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-          <input
-            type="checkbox"
-            checked={calendarPdf}
-            onChange={(e) => setCalendarPdf(e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 accent-primary cursor-pointer"
-          />
-          Calendar layout (PDF only)
-        </label>
       </div>
+      <fieldset className="space-y-1.5 border-0 p-0 m-0">
+        <legend className="text-xs text-muted-foreground pb-1">Format</legend>
+        <div className="flex flex-wrap gap-4">
+          {(Object.keys(FORMAT_LABELS) as Format[]).map((f) => (
+            <label key={f} className="flex items-center gap-1.5 text-sm cursor-pointer select-none">
+              <input
+                type="radio"
+                name="drive-log-format"
+                value={f}
+                checked={format === f}
+                onChange={() => setFormat(f)}
+                className="accent-primary cursor-pointer"
+              />
+              {FORMAT_LABELS[f]}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      {format === "pdf" && (
+        <fieldset className="space-y-1.5 border-0 p-0 m-0">
+          <legend className="text-xs text-muted-foreground pb-1">PDF layout</legend>
+          <div className="flex flex-wrap gap-4">
+            {PDF_LAYOUT_OPTIONS.map(({ value, label }) => (
+              <label key={value} className="flex items-center gap-1.5 text-sm cursor-pointer select-none">
+                <input
+                  type="radio"
+                  name="drive-log-pdf-layout"
+                  value={value}
+                  checked={pdfLayout === value}
+                  onChange={() => setPdfLayout(value)}
+                  className="accent-primary cursor-pointer"
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      )}
       {error && <p className="text-sm text-destructive">{error}</p>}
-      <div className="flex flex-wrap gap-2">
-        <Button variant="outline" size="sm" onClick={handleCsv} disabled={loading || !from || !to}>
-          CSV
-        </Button>
-        <Button variant="outline" size="sm" onClick={handleExcel} disabled={loading || !from || !to}>
-          Excel
-        </Button>
-        <Button variant="outline" size="sm" onClick={handlePdf} disabled={loading || !from || !to}>
-          PDF
-        </Button>
-      </div>
+      <Button size="sm" onClick={handleExport} disabled={loading || !from || !to}>
+        {loading ? "Exporting…" : "Export"}
+      </Button>
     </div>
   )
 }

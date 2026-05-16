@@ -73,10 +73,8 @@ export function DriveDaysList({ days, defaultCalendar, onDayDeleted }: Props) {
   })
 
   const today = new Date()
-  const thirtyDaysAgo = new Date(today)
-  thirtyDaysAgo.setDate(today.getDate() - 30)
-  const defaultTo = localDateString(today)
-  const defaultFrom = localDateString(thirtyDaysAgo)
+  const defaultFrom = localDateString(new Date(today.getFullYear(), today.getMonth(), 1))
+  const defaultTo = localDateString(new Date(today.getFullYear(), today.getMonth() + 1, 0))
 
   const groups = groupByDate(days)
 
