@@ -1,4 +1,4 @@
-// Express app entry point — wrapped by lambda.ts for production
+// Express app — wrapped by lambda.ts for production
 import express, { Request, Response, NextFunction } from "express"
 import cors from "cors"
 import helmet from "helmet"
