@@ -253,35 +253,45 @@ export async function getLegsForExport(
   from: string,
   to: string,
 ): Promise<ExportLeg[]> {
-  const rows = await query<Record<string, unknown>>(
+  const legRows = await query<Record<string, unknown>>(
     `SELECT l.*,
        to_char(dd.date, 'YYYY-MM-DD') AS drive_date,
        fl.name AS from_location_name,
-       tl.name AS to_location_name,
-       pn.passenger_names
+       tl.name AS to_location_name
      FROM legs l
      JOIN drive_days dd ON dd.id = l.drive_day_id
      LEFT JOIN locations fl ON fl.id = l.from_location_id
      LEFT JOIN locations tl ON tl.id = l.to_location_id
-     LEFT JOIN LATERAL (
-       SELECT COALESCE(
-         array_agg(DISTINCT p2.name ORDER BY p2.name) FILTER (WHERE p2.name IS NOT NULL),
-         '{}'::text[]
-       ) AS passenger_names
-       FROM legs l2
-       LEFT JOIN passengers p2 ON p2.id = l2.passenger_id
-       WHERE l2.drive_day_id = l.drive_day_id
-     ) pn ON true
      WHERE dd.user_id = $1
        AND dd.date >= $2::date
        AND dd.date <= $3::date
      ORDER BY dd.date DESC, l.position ASC`,
     [userId, from, to],
   )
-  return rows.map((r) => ({
+
+  if (legRows.length === 0) return []
+
+  const dayIds = [...new Set(legRows.map((r) => col<string>(r, 'drive_day_id')))]
+  const nameRows = await query<Record<string, unknown>>(
+    `SELECT l.drive_day_id,
+       COALESCE(
+         array_agg(DISTINCT p.name ORDER BY p.name) FILTER (WHERE p.name IS NOT NULL),
+         '{}'::text[]
+       ) AS passenger_names
+     FROM legs l
+     LEFT JOIN passengers p ON p.id = l.passenger_id
+     WHERE l.drive_day_id = ANY($1)
+     GROUP BY l.drive_day_id`,
+    [dayIds],
+  )
+  const namesByDay = new Map(
+    nameRows.map((r) => [col<string>(r, 'drive_day_id'), col<string[]>(r, 'passenger_names')]),
+  )
+
+  return legRows.map((r) => ({
     ...parseLeg(r),
     drive_date: col<string>(r, 'drive_date'),
-    passenger_names: col<string[]>(r, 'passenger_names'),
+    passenger_names: namesByDay.get(col<string>(r, 'drive_day_id')) ?? [],
   }))
 }
 
