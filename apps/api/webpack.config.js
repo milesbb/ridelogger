@@ -15,6 +15,10 @@ module.exports = {
         use: [{ loader: "ts-loader", options: { transpileOnly: true } }],
         exclude: /node_modules/,
       },
+      {
+        test: /\.crt$/,
+        type: "asset/source",
+      },
     ],
   },
   output: {

@@ -1,6 +1,8 @@
 import { Pool, PoolClient } from 'pg'
 import { getDatabaseParameters } from './aws/parameters'
 import logger from './logging'
+// @ts-expect-error webpack asset/source import
+import supabaseCa from '../../certs/supabase-ca.crt'
 
 let pool: Pool | null = null
 
@@ -17,7 +19,7 @@ async function buildPool(): Promise<Pool> {
 
   const p = new Pool({
     connectionString,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true, ca: supabaseCa } : false,
   })
 
   p.on('error', (err) => logger.error('pg pool error', { err }))
