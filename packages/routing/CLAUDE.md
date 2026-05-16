@@ -1,5 +1,9 @@
 # Routing package — Claude Context
 
+## README
+
+`README.md` at the repo root is the developer setup guide. If your changes affect anything it documents — such as how to swap routing providers or the `ROUTING_PROVIDER` env var — update `README.md` to match.
+
 Provider-agnostic routing abstraction. The rest of the codebase calls `createRoutingService()` and never imports from a specific provider file.
 
 ## Adding a provider

@@ -1,5 +1,9 @@
 # Web — Claude Context
 
+## README
+
+`README.md` at the repo root is the developer setup guide. If your changes affect anything it documents — stack choices, env vars, CI/CD behaviour, or setup steps — update `README.md` to match.
+
 Next.js 14 App Router frontend, deployed to Vercel.
 
 ## Key files

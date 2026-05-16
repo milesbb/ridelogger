@@ -1,5 +1,9 @@
 # API — Claude Context
 
+## README
+
+`README.md` at the repo root is the developer setup guide. If your changes affect anything it documents — SSM parameters, env vars, the stack, CI/CD steps, or DB migration instructions — update `README.md` to match.
+
 Express.js app deployed as AWS Lambda via `@vendia/serverless-express`. Entry points: `src/lambda.ts` (production), `src/app-local.ts` (local dev with dotenv).
 
 ## Layer responsibilities

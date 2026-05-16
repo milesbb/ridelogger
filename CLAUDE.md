@@ -1,5 +1,9 @@
 # RideLogger — Claude Context
 
+## README
+
+`README.md` is the developer setup guide for the whole repo. If your changes affect anything it documents — stack choices, env vars, SSM parameters, CI/CD behaviour, local setup steps, or repo structure — update `README.md` to match.
+
 ## What this is
 
 Web app for volunteer drivers. Users save passenger profiles and named locations, plan a drive day, and get a distance/time table to copy onto their paper form. Auth is JWT-based (no Supabase auth). Routing is via OpenRouteService.

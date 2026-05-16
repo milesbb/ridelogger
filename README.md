@@ -2,6 +2,8 @@
 
 Web app for volunteer drivers. Save passenger profiles and named locations, plan a drive day, and get a table of distances and times to copy onto your paper form.
 
+**Live at [ridelogger.au](https://ridelogger.au/)**
+
 ## Stack
 
 | Layer | Choice |
@@ -82,14 +84,26 @@ Deploy only runs on push to `main`. PRs run lint + test only.
 
 All production secrets are stored in AWS SSM Parameter Store. These must exist before the first CI deploy. Create them in the AWS Console or with `aws ssm put-parameter`.
 
+**Runtime parameters** (read by the Lambda on first use):
+
 | Parameter | Type | Description |
 |---|---|---|
-| `/ridelogger/production/database-url` | SecureString | `postgresql://user:pass@host:5432/db` — for the API |
-| `/ridelogger/production/flyway-url` | String | `jdbc:postgresql://host:5432/db` — for Flyway in CI |
+| `/ridelogger/production/database-host` | String | Supabase DB host |
+| `/ridelogger/production/database-name` | String | DB name |
 | `/ridelogger/production/database-user` | String | DB username |
 | `/ridelogger/production/database-password` | SecureString | DB password |
+| `/ridelogger/production/database-port` | String | DB port (usually `5432`) |
+| `/ridelogger/production/database-uri` | SecureString | Full connection string `postgresql://user:pass@host:5432/db` |
 | `/ridelogger/production/jwt-secret` | SecureString | `openssl rand -hex 64` |
 | `/ridelogger/production/ors-api-key` | SecureString | From openrouteservice.org |
+
+**CI-only parameters** (used by Flyway during the migrate job):
+
+| Parameter | Type | Description |
+|---|---|---|
+| `/ridelogger/production/flyway-url` | String | `jdbc:postgresql://host:5432/db` |
+| `/ridelogger/production/database-user` | String | (same as above) |
+| `/ridelogger/production/database-password` | SecureString | (same as above) |
 
 ## Privacy
 

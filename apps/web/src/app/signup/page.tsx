@@ -30,7 +30,8 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm space-y-6">
-        <div className="text-center space-y-1">
+        <div className="text-center space-y-2">
+          <img src="/icon.svg" alt="RideLogger" className="mx-auto h-16 w-16" />
           <h1 className="text-2xl font-semibold tracking-tight">RideLogger</h1>
           <p className="text-sm text-muted-foreground">Create an account</p>
         </div>
