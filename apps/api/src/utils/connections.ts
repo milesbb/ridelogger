@@ -1,9 +1,29 @@
 import { Pool, PoolClient } from 'pg'
 import { supabaseCa } from '../certs/supabase-ca'
+import { Errors } from './errorTypes'
 import { getDatabaseParameters } from './aws/parameters'
 import logger from './logging'
 
 let pool: Pool | null = null
+
+function stripSslMode(uri: string): string {
+  try {
+    const url = new URL(uri)
+    url.searchParams.delete('sslmode')
+    return url.toString()
+  } catch {
+    return uri
+  }
+}
+
+const DB_CONN_ERROR_CODES = new Set([
+  'ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND',
+  'SELF_SIGNED_CERT_IN_CHAIN', 'CERT_HAS_EXPIRED', 'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+])
+
+function isDbConnectivityError(err: unknown): boolean {
+  return err instanceof Error && DB_CONN_ERROR_CODES.has((err as NodeJS.ErrnoException).code ?? '')
+}
 
 async function buildPool(): Promise<Pool> {
   let connectionString: string
@@ -13,7 +33,7 @@ async function buildPool(): Promise<Pool> {
     connectionString = process.env.DATABASE_URL
   } else {
     const params = await getDatabaseParameters()
-    connectionString = params.uri
+    connectionString = stripSslMode(params.uri)
   }
 
   const p = new Pool({
@@ -33,7 +53,15 @@ async function getPool(): Promise<Pool> {
 }
 
 export async function getConnection(): Promise<PoolClient> {
-  return (await getPool()).connect()
+  try {
+    return await (await getPool()).connect()
+  } catch (err) {
+    if (isDbConnectivityError(err)) {
+      logger.error('db connection failed', { err })
+      throw Errors.ServiceUnavailable('Database connection failed')
+    }
+    throw err
+  }
 }
 
 export async function query<T extends object>(

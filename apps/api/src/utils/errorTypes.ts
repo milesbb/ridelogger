@@ -17,4 +17,5 @@ export const Errors = {
   Conflict: (msg: string) => makeError(msg, 409, "Conflict"),
   BadRequest: (msg: string) => makeError(msg, 400, "BadRequest"),
   Internal: (msg = "Internal server error") => makeError(msg, 500, "Internal"),
+  ServiceUnavailable: (msg = "Service temporarily unavailable") => makeError(msg, 503, "ServiceUnavailable"),
 }
