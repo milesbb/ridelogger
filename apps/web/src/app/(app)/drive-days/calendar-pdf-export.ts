@@ -14,8 +14,8 @@ const DOW_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 const WEEKEND_FILL: [number, number, number] = [249, 250, 251]
 const BORDER_COLOUR: [number, number, number] = [229, 231, 235]
 
-function formatPassengers(names: string[]): string {
-  if (names.length === 0) return "No passengers"
+function formatPassengers(names: string[] | undefined): string {
+  if (!names || names.length === 0) return "No passengers"
   const MAX_CHARS = 26
   let result = names[0]
   let shown = 1
@@ -54,7 +54,7 @@ function groupDaysByDate(legs: ExportLeg[]): Map<string, DayEntry[]> {
   const seen = new Map<string, DayEntry>()
   for (const leg of legs) {
     if (!seen.has(leg.drive_day_id)) {
-      const entry: DayEntry = { drive_day_id: leg.drive_day_id, passenger_names: leg.passenger_names }
+      const entry: DayEntry = { drive_day_id: leg.drive_day_id, passenger_names: leg.passenger_names ?? [] }
       seen.set(leg.drive_day_id, entry)
       const existing = map.get(leg.drive_date)
       if (existing) { existing.push(entry) } else { map.set(leg.drive_date, [entry]) }
