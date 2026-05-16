@@ -29,15 +29,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }, [accessToken, isLoading, router])
 
-  if (isLoading) {
+  if (isLoading || !accessToken) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">
-        Loading…
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted border-t-foreground" />
       </div>
     )
   }
-
-  if (!accessToken) return null
 
   const closeMenu = () => setMenuOpen(false)
 
