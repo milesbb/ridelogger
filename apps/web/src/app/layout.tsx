@@ -13,11 +13,15 @@ const geistSans = localFont({
 export const metadata: Metadata = {
   title: "RideLogger",
   description: "Volunteer drive planner",
+  manifest: "/site.webmanifest",
+  appleWebApp: { title: "RideLogger" },
   icons: {
     icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
-      { url: "/favicon.ico" },
+      { url: "/favicon.ico", rel: "shortcut icon" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon-96x96.png", type: "image/png", sizes: "96x96" },
     ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
   },
 }
 
