@@ -133,7 +133,8 @@ export async function addPdfBrandHeader(
   doc.setFontSize(7.5)
   doc.setFont("helvetica", "normal")
   doc.setTextColor(130, 130, 130)
-  doc.text(`Exported: ${exportedOn}`, pageW - margin, textMidY, { align: "right" })
+  doc.text(`Exported: ${exportedOn}`, pageW - margin, textMidY - 1.5, { align: "right" })
+  doc.text("https://ridelogger.au", pageW - margin, textMidY + 2.5, { align: "right" })
   doc.setTextColor(0, 0, 0)
 
   let y = logoY + logoSize + 4
