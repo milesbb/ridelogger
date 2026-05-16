@@ -45,7 +45,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen flex flex-col">
       <header className="border-b bg-background sticky top-0 z-10">
         <nav className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
-          <Link href="/drive" className="font-semibold text-base">
+          <Link href="/drive" className="flex items-center gap-2 font-semibold text-base">
+            <img src="/icon.svg" alt="" aria-hidden="true" className="h-7 w-7" />
             RideLogger
           </Link>
 

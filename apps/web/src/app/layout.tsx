@@ -13,6 +13,12 @@ const geistSans = localFont({
 export const metadata: Metadata = {
   title: "RideLogger",
   description: "Volunteer drive planner",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico" },
+    ],
+  },
 }
 
 export const viewport: Viewport = {
