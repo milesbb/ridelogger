@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { axe } from 'vitest-axe'
 import { LocationForm } from './location-form'
 import { api } from '@/lib/api/client'
 import type { Location } from '@/lib/api/types'
@@ -42,6 +43,11 @@ beforeEach(() => {
 })
 
 describe('LocationForm — create mode', () => {
+  it('has no accessibility violations', async () => {
+    const { container } = render(<LocationForm onDone={onDone} />)
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
   it('renders name and address fields', () => {
     render(<LocationForm onDone={onDone} />)
     expect(screen.getByLabelText(/name/i)).toBeInTheDocument()

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { axe } from 'vitest-axe'
 import { PassengerForm } from './passenger-form'
 import { api } from '@/lib/api/client'
 import type { Passenger, Location } from '@/lib/api/types'
@@ -63,6 +64,11 @@ beforeEach(() => {
 })
 
 describe('PassengerForm — create mode', () => {
+  it('has no accessibility violations', async () => {
+    const { container } = render(<PassengerForm onDone={onDone} />)
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
   it('renders name and home address fields', () => {
     render(<PassengerForm onDone={onDone} />)
     expect(screen.getByLabelText(/^name/i)).toBeInTheDocument()

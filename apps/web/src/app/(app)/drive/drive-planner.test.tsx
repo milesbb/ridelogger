@@ -1,6 +1,7 @@
 import React from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
+import { axe } from 'vitest-axe'
 import { DrivePlanner } from './drive-planner'
 import { api } from '@/lib/api/client'
 import type { Passenger, Location, AppSettings, DriveLegResult } from '@/lib/api/types'
@@ -128,6 +129,11 @@ beforeEach(() => {
 })
 
 describe('DrivePlanner — passenger selection', () => {
+  it('has no accessibility violations', async () => {
+    const { container } = render(<DrivePlanner {...defaultProps} />)
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
   it('renders unselected passengers as buttons', () => {
     render(<DrivePlanner {...defaultProps} />)
     expect(screen.getByRole('button', { name: 'Alice Smith' })).toBeInTheDocument()

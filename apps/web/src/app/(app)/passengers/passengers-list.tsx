@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { PassengerForm } from "./passenger-form"
 import { api } from "@/lib/api/client"
 import { PrivacyLink } from "@/components/privacy-link"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import type { Passenger } from "@/lib/api/types"
 
 interface Props {
@@ -18,18 +19,22 @@ export function PassengersList({ passengers, onRefresh }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [addOpen, setAddOpen] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [confirmTarget, setConfirmTarget] = useState<string | null>(null)
+  const [deleteHomeLocation, setDeleteHomeLocation] = useState(false)
   const [search, setSearch] = useState("")
 
   const filtered = passengers.filter((p) =>
     p.name.toLowerCase().includes(search.toLowerCase())
   )
 
-  async function handleDelete(id: string) {
-    if (!confirm("Remove this passenger?")) return
-    const deleteHomeLocation = confirm("Also delete their saved home location?")
+  async function handleConfirmDelete(): Promise<void> {
+    if (!confirmTarget) return
+    const id = confirmTarget
+    const also = deleteHomeLocation
     setDeletingId(id)
+    setDeleteHomeLocation(false)
     try {
-      await api.passengers.delete(id, deleteHomeLocation)
+      await api.passengers.delete(id, also)
       onRefresh()
     } finally {
       setDeletingId(null)
@@ -60,6 +65,7 @@ export function PassengersList({ passengers, onRefresh }: Props) {
       {passengers.length > 0 && (
         <input
           type="text"
+          aria-label="Search passengers"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search passengers…"
@@ -94,7 +100,7 @@ export function PassengersList({ passengers, onRefresh }: Props) {
                     <PassengerForm existing={p} onDone={() => { setEditingId(null); onRefresh() }} />
                   </DialogContent>
                 </Dialog>
-                <Button variant="ghost" size="icon" aria-label="Delete" disabled={deletingId === p.id} onClick={() => handleDelete(p.id)}>
+                <Button variant="ghost" size="icon" aria-label="Delete" disabled={deletingId === p.id} onClick={() => { setDeleteHomeLocation(false); setConfirmTarget(p.id) }}>
                   <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
               </div>
@@ -102,6 +108,24 @@ export function PassengersList({ passengers, onRefresh }: Props) {
           ))}
         </ul>
       )}
+      <ConfirmDialog
+        open={confirmTarget !== null}
+        onOpenChange={(open) => { if (!open) setConfirmTarget(null) }}
+        title="Remove passenger?"
+        confirmLabel="Remove"
+        destructive
+        onConfirm={handleConfirmDelete}
+      >
+        <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={deleteHomeLocation}
+            onChange={(e) => setDeleteHomeLocation(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 accent-primary cursor-pointer"
+          />
+          Also delete their saved home location
+        </label>
+      </ConfirmDialog>
     </div>
   )
 }

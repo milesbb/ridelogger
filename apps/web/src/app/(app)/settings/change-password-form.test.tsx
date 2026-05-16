@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { axe } from 'vitest-axe'
 import { ChangePasswordForm } from './change-password-form'
 
 vi.mock('@/lib/api/client', () => ({
@@ -17,6 +18,11 @@ beforeEach(() => {
 })
 
 describe('ChangePasswordForm — rendering', () => {
+  it('has no accessibility violations', async () => {
+    const { container } = render(<ChangePasswordForm />)
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
   it('renders all three password fields', () => {
     render(<ChangePasswordForm />)
     expect(screen.getByLabelText('Current password')).toBeInTheDocument()

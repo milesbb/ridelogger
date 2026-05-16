@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { axe } from 'vitest-axe'
 import { SettingsForm } from './settings-form'
 import { api } from '@/lib/api/client'
 import type { AppSettings } from '@/lib/api/types'
@@ -42,6 +43,11 @@ beforeEach(() => {
 })
 
 describe('SettingsForm — rendering', () => {
+  it('has no accessibility violations', async () => {
+    const { container } = render(<SettingsForm existing={null} />)
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
   it('renders the home address fields', () => {
     render(<SettingsForm existing={null} />)
     expect(screen.getByLabelText(/street address/i)).toBeInTheDocument()

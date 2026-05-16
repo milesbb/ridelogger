@@ -115,6 +115,7 @@ export function DestinationPicker({
           {showAddForm ? (
             <form onSubmit={handleAddNew} className="space-y-3">
               <Input
+                aria-label="Location name"
                 placeholder="Location name (e.g. St Vincent's)"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}

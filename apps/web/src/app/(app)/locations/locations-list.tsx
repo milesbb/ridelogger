@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { LocationForm } from "./location-form"
 import { api } from "@/lib/api/client"
 import { PrivacyLink } from "@/components/privacy-link"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import type { Location } from "@/lib/api/types"
 
 interface Props {
@@ -18,10 +19,12 @@ export function LocationsList({ locations, onRefresh }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [addOpen, setAddOpen] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [confirmId, setConfirmId] = useState<string | null>(null)
   const [deleteError, setDeleteError] = useState<{ id: string; message: string } | null>(null)
 
-  async function handleDelete(id: string) {
-    if (!confirm("Remove this location?")) return
+  async function handleConfirmDelete(): Promise<void> {
+    if (!confirmId) return
+    const id = confirmId
     setDeletingId(id)
     setDeleteError(null)
     try {
@@ -80,7 +83,7 @@ export function LocationsList({ locations, onRefresh }: Props) {
                       <LocationForm existing={loc} onDone={() => { setEditingId(null); onRefresh() }} />
                     </DialogContent>
                   </Dialog>
-                  <Button variant="ghost" size="icon" aria-label="Delete" disabled={deletingId === loc.id} onClick={() => handleDelete(loc.id)}>
+                  <Button variant="ghost" size="icon" aria-label="Delete" disabled={deletingId === loc.id} onClick={() => setConfirmId(loc.id)}>
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 </div>
@@ -92,6 +95,14 @@ export function LocationsList({ locations, onRefresh }: Props) {
           ))}
         </ul>
       )}
+      <ConfirmDialog
+        open={confirmId !== null}
+        onOpenChange={(open) => { if (!open) setConfirmId(null) }}
+        title="Remove location?"
+        confirmLabel="Remove"
+        destructive
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   )
 }

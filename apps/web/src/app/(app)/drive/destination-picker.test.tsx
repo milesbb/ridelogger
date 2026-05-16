@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { axe, configureAxe } from 'vitest-axe'
 import { DestinationPicker } from './destination-picker'
 import { api } from '@/lib/api/client'
 import type { Location } from '@/lib/api/types'
@@ -73,7 +74,16 @@ beforeEach(() => {
   vi.clearAllMocks()
 })
 
+// Radix UI focus guards produce a false aria-hidden-focus positive in happy-dom.
+// Disable the rule for open-dialog checks — it does not reflect real browser behaviour.
+const axeNoFocusGuard = configureAxe({ rules: { 'aria-hidden-focus': { enabled: false } } })
+
 describe('DestinationPicker — section headers', () => {
+  it('has no accessibility violations', async () => {
+    renderOpen()
+    expect(await axeNoFocusGuard(document.body)).toHaveNoViolations()
+  })
+
   it('shows Saved locations section for non-home locations', () => {
     renderOpen()
     expect(screen.getByText('Saved locations')).toBeInTheDocument()

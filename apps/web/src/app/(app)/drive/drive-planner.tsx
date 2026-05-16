@@ -249,8 +249,9 @@ function SaveSection({ date, legsForSave, onSaved }: SaveSectionProps) {
       <p className="text-sm font-medium">Save drive day</p>
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="flex-1 space-y-1">
-          <label className="text-xs text-muted-foreground">Start time (optional)</label>
+          <label htmlFor="start-time" className="text-xs text-muted-foreground">Start time (optional)</label>
           <input
+            id="start-time"
             type="time"
             value={startTime}
             onChange={(e) => setStartTime(e.target.value)}

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
+import { axe } from 'vitest-axe'
 import { DriveDaysList } from './drive-days-list'
 import type { DriveDaySummary } from '@/lib/api/types'
 
@@ -81,6 +82,11 @@ beforeEach(() => {
 })
 
 describe('DriveDaysList — rendering', () => {
+  it('has no accessibility violations', async () => {
+    const { container } = render(<DriveDaysList days={[day1]} defaultCalendar={false} onDayDeleted={onDayDeleted} />)
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
   it('shows empty state when no days are provided', () => {
     render(<DriveDaysList days={[]} defaultCalendar={false} onDayDeleted={onDayDeleted} />)
     expect(screen.getByText(/no drive days saved yet/i)).toBeInTheDocument()

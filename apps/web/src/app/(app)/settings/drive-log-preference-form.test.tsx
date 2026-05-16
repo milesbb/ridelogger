@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { axe } from 'vitest-axe'
 import { DriveLogPreferenceForm } from './drive-log-preference-form'
 
 vi.mock('@/lib/api/client', () => ({
@@ -16,6 +17,13 @@ import { api } from '@/lib/api/client'
 beforeEach(() => { vi.clearAllMocks() })
 
 describe('DriveLogPreferenceForm', () => {
+  it('has no accessibility violations after content loads', async () => {
+    vi.mocked(api.preferences.get).mockResolvedValue({ drive_log_calendar_default: false, theme: 'light' as const })
+    const { container } = render(<DriveLogPreferenceForm />)
+    await waitFor(() => screen.getByRole('button', { name: 'List' }))
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
   it('shows List as active when drive_log_calendar_default is false', async () => {
     vi.mocked(api.preferences.get).mockResolvedValue({ drive_log_calendar_default: false, theme: 'light' as const })
     render(<DriveLogPreferenceForm />)

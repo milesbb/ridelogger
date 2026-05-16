@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { axe } from 'vitest-axe'
 import SignupPage from './page'
 
 const mockRegister = vi.fn()
@@ -18,6 +19,11 @@ beforeEach(() => {
 })
 
 describe('SignupPage', () => {
+  it('has no accessibility violations', async () => {
+    const { container } = render(<SignupPage />)
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
   it('renders email, username, and password inputs', () => {
     render(<SignupPage />)
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument()

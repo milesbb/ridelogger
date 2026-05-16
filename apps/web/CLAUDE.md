@@ -73,3 +73,12 @@ The source of truth for the privacy policy is `PRIVACY_POLICY.md` at the repo ro
 - Mock at the component boundary: mock `api.*` calls and `next/navigation`, not internal component state.
 - Test user-facing behaviour: what renders, what API calls are triggered, what callbacks fire. Not internal state changes.
 - Place test files next to the file they test (e.g. `passenger-form.tsx` → `passenger-form.test.tsx`).
+
+## Accessibility tests
+
+- **Every component test file must include an axe accessibility check.** Add `it('has no accessibility violations', ...)` as the first test in the first rendering describe block.
+- Use `axe` from `vitest-axe`. Import: `import { axe } from 'vitest-axe'`. The setup file already wires up the matcher via `vitest-axe/extend-expect`.
+- For components that render synchronously: `const { container } = render(<Component />); expect(await axe(container)).toHaveNoViolations()`
+- For components with Radix UI portals/dialogs that are open: use `document.body` instead of `container` so portal content is included.
+- For components that load data asynchronously: mock the API call, render, `await waitFor(...)` for content to appear, then run axe.
+- When you add or significantly change a component's markup, run the axe test and fix any violations before marking the task complete.

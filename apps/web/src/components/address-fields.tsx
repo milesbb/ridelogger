@@ -97,9 +97,10 @@ export function AddressFields({ value, onChange, disabled = false, idPrefix = "a
             maxLength={4}
             inputMode="numeric"
             disabled={disabled}
+            aria-describedby={postcodeError ? `${idPrefix}-postcode-error` : undefined}
           />
           {postcodeError && (
-            <p className="text-xs text-destructive">Postcode must be 4 digits</p>
+            <p id={`${idPrefix}-postcode-error`} className="text-xs text-destructive">Postcode must be 4 digits</p>
           )}
         </div>
       </div>

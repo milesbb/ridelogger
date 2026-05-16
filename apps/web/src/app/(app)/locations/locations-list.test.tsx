@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { axe } from 'vitest-axe'
 import { LocationsList } from './locations-list'
 import { api } from '@/lib/api/client'
 import type { Location } from '@/lib/api/types'
@@ -48,6 +49,11 @@ beforeEach(() => {
 })
 
 describe('LocationsList — rendering', () => {
+  it('has no accessibility violations', async () => {
+    const { container } = render(<LocationsList locations={[hospitalLocation]} onRefresh={onRefresh} />)
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
   it('shows empty state when there are no locations', () => {
     render(<LocationsList locations={[]} onRefresh={onRefresh} />)
     expect(screen.getByText(/no locations yet/i)).toBeInTheDocument()
@@ -68,22 +74,25 @@ describe('LocationsList — rendering', () => {
 })
 
 describe('LocationsList — delete', () => {
-  it('calls api.locations.delete and onRefresh when confirm is accepted', async () => {
+  it('calls api.locations.delete and onRefresh when remove is confirmed', async () => {
     vi.mocked(api.locations.delete).mockResolvedValue(undefined)
-    vi.spyOn(window, 'confirm').mockReturnValueOnce(true)
 
     render(<LocationsList locations={[hospitalLocation]} onRefresh={onRefresh} />)
     fireEvent.click(screen.getByRole('button', { name: /delete/i }))
+
+    await waitFor(() => expect(screen.getByText('Remove location?')).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: /^remove$/i }))
 
     await waitFor(() => expect(vi.mocked(api.locations.delete)).toHaveBeenCalledWith('loc-1'))
     expect(onRefresh).toHaveBeenCalled()
   })
 
-  it('does not delete when confirm is declined', () => {
-    vi.spyOn(window, 'confirm').mockReturnValueOnce(false)
-
+  it('does not delete when dialog is cancelled', async () => {
     render(<LocationsList locations={[hospitalLocation]} onRefresh={onRefresh} />)
     fireEvent.click(screen.getByRole('button', { name: /delete/i }))
+
+    await waitFor(() => expect(screen.getByText('Remove location?')).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: /cancel/i }))
 
     expect(vi.mocked(api.locations.delete)).not.toHaveBeenCalled()
     expect(onRefresh).not.toHaveBeenCalled()
@@ -91,10 +100,12 @@ describe('LocationsList — delete', () => {
 
   it('shows inline error message when delete fails', async () => {
     vi.mocked(api.locations.delete).mockRejectedValue(new Error('Location is in use'))
-    vi.spyOn(window, 'confirm').mockReturnValueOnce(true)
 
     render(<LocationsList locations={[hospitalLocation]} onRefresh={onRefresh} />)
     fireEvent.click(screen.getByRole('button', { name: /delete/i }))
+
+    await waitFor(() => expect(screen.getByText('Remove location?')).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: /^remove$/i }))
 
     await waitFor(() => expect(screen.getByText('Location is in use')).toBeInTheDocument())
     expect(onRefresh).not.toHaveBeenCalled()

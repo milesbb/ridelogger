@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import { axe } from 'vitest-axe'
 import AppLayout from './layout'
 
 vi.mock('next/navigation', () => ({
@@ -12,6 +13,11 @@ vi.mock('@/context/AuthContext', () => ({
 }))
 
 describe('AppLayout nav active state', () => {
+  it('has no accessibility violations', async () => {
+    const { container } = render(<AppLayout>content</AppLayout>)
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
   it('marks the current route link as active', () => {
     render(<AppLayout>content</AppLayout>)
     const driveLogLinks = screen.getAllByRole('link', { name: 'Drive Log' })

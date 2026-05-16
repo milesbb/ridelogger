@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { axe } from 'vitest-axe'
 import { PassengersList } from './passengers-list'
 import { api } from '@/lib/api/client'
 import type { Passenger } from '@/lib/api/types'
@@ -51,6 +52,11 @@ beforeEach(() => {
 })
 
 describe('PassengersList — rendering', () => {
+  it('has no accessibility violations', async () => {
+    const { container } = render(<PassengersList passengers={[alice]} onRefresh={onRefresh} />)
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
   it('shows empty state when there are no passengers', () => {
     render(<PassengersList passengers={[]} onRefresh={onRefresh} />)
     expect(screen.getByText(/no passengers yet/i)).toBeInTheDocument()
@@ -87,36 +93,38 @@ describe('PassengersList — search', () => {
 })
 
 describe('PassengersList — delete', () => {
-  it('calls api.passengers.delete and onRefresh when both confirms are accepted', async () => {
+  it('calls api.passengers.delete and onRefresh when remove is confirmed without home location', async () => {
     vi.mocked(api.passengers.delete).mockResolvedValue(undefined)
-    vi.spyOn(window, 'confirm')
-      .mockReturnValueOnce(true)   // "Remove this passenger?"
-      .mockReturnValueOnce(false)  // "Also delete their saved home location?"
 
     render(<PassengersList passengers={[alice]} onRefresh={onRefresh} />)
     fireEvent.click(screen.getByRole('button', { name: /delete/i }))
+
+    await waitFor(() => expect(screen.getByText('Remove passenger?')).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: /^remove$/i }))
 
     await waitFor(() => expect(vi.mocked(api.passengers.delete)).toHaveBeenCalledWith('p1', false))
     expect(onRefresh).toHaveBeenCalled()
   })
 
-  it('passes deleteHomeLocation=true when second confirm is accepted', async () => {
+  it('passes deleteHomeLocation=true when checkbox is checked before confirming', async () => {
     vi.mocked(api.passengers.delete).mockResolvedValue(undefined)
-    vi.spyOn(window, 'confirm')
-      .mockReturnValueOnce(true)
-      .mockReturnValueOnce(true)
 
     render(<PassengersList passengers={[alice]} onRefresh={onRefresh} />)
     fireEvent.click(screen.getByRole('button', { name: /delete/i }))
+
+    await waitFor(() => expect(screen.getByText('Remove passenger?')).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('checkbox', { name: /also delete their saved home location/i }))
+    fireEvent.click(screen.getByRole('button', { name: /^remove$/i }))
 
     await waitFor(() => expect(vi.mocked(api.passengers.delete)).toHaveBeenCalledWith('p1', true))
   })
 
-  it('does not delete when first confirm is declined', () => {
-    vi.spyOn(window, 'confirm').mockReturnValueOnce(false)
-
+  it('does not delete when dialog is cancelled', async () => {
     render(<PassengersList passengers={[alice]} onRefresh={onRefresh} />)
     fireEvent.click(screen.getByRole('button', { name: /delete/i }))
+
+    await waitFor(() => expect(screen.getByText('Remove passenger?')).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: /cancel/i }))
 
     expect(vi.mocked(api.passengers.delete)).not.toHaveBeenCalled()
     expect(onRefresh).not.toHaveBeenCalled()

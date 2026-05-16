@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { axe } from 'vitest-axe'
 import { DeleteAccountSection } from './delete-account-section'
 
 vi.mock('@/lib/api/client', () => ({
@@ -29,6 +30,11 @@ beforeEach(() => {
 })
 
 describe('DeleteAccountSection — rendering', () => {
+  it('has no accessibility violations', async () => {
+    const { container } = render(<DeleteAccountSection />)
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
   it('renders the Delete account button', () => {
     render(<DeleteAccountSection />)
     expect(screen.getByRole('button', { name: /delete account/i })).toBeInTheDocument()

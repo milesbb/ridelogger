@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
+import { axe } from 'vitest-axe'
 import { AddressFields, assembleAddress, parseAustralianAddress, type AustralianAddress } from './address-fields'
 
 const emptyAddress: AustralianAddress = { street: '', suburb: '', state: '', postcode: '' }
@@ -58,6 +59,11 @@ describe('parseAustralianAddress', () => {
 })
 
 describe('AddressFields component', () => {
+  it('has no accessibility violations', async () => {
+    const { container } = render(<AddressFields value={emptyAddress} onChange={vi.fn()} />)
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
   it('renders all four labelled fields', () => {
     render(<AddressFields value={emptyAddress} onChange={vi.fn()} />)
     expect(screen.getByLabelText(/street address/i)).toBeInTheDocument()

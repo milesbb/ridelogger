@@ -41,8 +41,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-3 focus:py-2 focus:bg-background focus:border focus:rounded-md focus:text-sm focus:font-medium"
+      >
+        Skip to main content
+      </a>
       <header className="border-b bg-background sticky top-0 z-10">
-        <nav className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
+        <nav aria-label="Main navigation" className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
           <Link href="/drive" className="flex items-center gap-2 font-semibold text-base">
             <img src="/icon.svg" alt="" aria-hidden="true" className="h-7 w-7" />
             RideLogger
@@ -52,6 +58,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             onClick={() => setMenuOpen((o) => !o)}
             className="md:hidden p-1 -mr-1 text-muted-foreground hover:text-foreground transition-colors"
             aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
           >
             {menuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
@@ -109,7 +116,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         )}
       </header>
-      <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-6">{children}</main>
+      <main id="main-content" className="flex-1 max-w-2xl mx-auto w-full px-4 py-6">{children}</main>
       <footer className="border-t mt-auto">
         <div className="max-w-2xl mx-auto px-4 py-4 text-center text-xs text-muted-foreground">
           More from{" "}

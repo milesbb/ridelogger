@@ -143,3 +143,4 @@ lib/           drive-utils.ts and other pure utilities
 - Test behaviour, not implementation. Assert on what a function returns or what side effects it causes, not how it does it internally.
 - **After any change to API service or data logic, update the relevant tests and add new tests for new behaviour.** A change with no test update is incomplete unless the change is purely cosmetic (renaming, reformatting) or only touches configuration.
 - **After any change to a web component or utility, update or add the relevant RTL/Vitest tests.** See `apps/web/CLAUDE.md` for the web-specific testing rules.
+- **Every web component test file must include an axe accessibility check** (`import { axe } from 'vitest-axe'`). When adding a new component, add `it('has no accessibility violations', ...)` as the first test in the first rendering describe block. See `apps/web/CLAUDE.md` for full axe testing rules.

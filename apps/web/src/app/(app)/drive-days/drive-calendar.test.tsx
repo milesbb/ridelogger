@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
+import { axe } from 'vitest-axe'
 import { DriveCalendar } from './drive-calendar'
 import type { DriveDaySummary } from '@/lib/api/types'
 
@@ -28,6 +29,13 @@ beforeEach(() => {
 })
 
 describe('DriveCalendar — rendering', () => {
+  it('has no accessibility violations', async () => {
+    // axe uses setTimeout internally; restore real timers so the check doesn't stall.
+    vi.useRealTimers()
+    const { container } = render(<DriveCalendar days={[]} onDayClick={onDayClick} />)
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
   it('renders the current month label', () => {
     render(<DriveCalendar days={[]} onDayClick={onDayClick} />)
     expect(screen.getByText('May 2026')).toBeInTheDocument()

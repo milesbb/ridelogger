@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { axe } from 'vitest-axe'
 import { PreviousDrives, buildSlotsFromDetail } from './previous-drives'
 import { api } from '@/lib/api/client'
 import type { Passenger, Location, DriveDaySummary, DriveDayDetail } from '@/lib/api/types'
@@ -140,6 +141,15 @@ describe('buildSlotsFromDetail', () => {
 
 describe('PreviousDrives — component', () => {
   const onSelect = vi.fn()
+
+  it('has no accessibility violations', async () => {
+    vi.mocked(api.drive.listSimilarDays).mockResolvedValue([])
+    const { container } = render(
+      <PreviousDrives date="2026-05-06" passengers={[alice]} locations={[homeLocation, hospital]} onSelect={onSelect} />
+    )
+    await waitFor(() => expect(vi.mocked(api.drive.listSimilarDays)).toHaveBeenCalled())
+    expect(await axe(container)).toHaveNoViolations()
+  })
 
   it('renders nothing when similar days list is empty', async () => {
     vi.mocked(api.drive.listSimilarDays).mockResolvedValue([])

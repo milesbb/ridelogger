@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { axe } from 'vitest-axe'
 import { ThemePreferenceForm } from './theme-preference-form'
 
 vi.mock('@/lib/api/client', () => ({
@@ -26,6 +27,13 @@ beforeEach(() => {
 })
 
 describe('ThemePreferenceForm', () => {
+  it('has no accessibility violations after content loads', async () => {
+    vi.mocked(api.preferences.get).mockResolvedValue({ drive_log_calendar_default: false, theme: 'light' })
+    const { container } = render(<ThemePreferenceForm />)
+    await waitFor(() => screen.getByRole('button', { name: /light/i }))
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
   it('shows Light as selected when theme is light', async () => {
     vi.mocked(api.preferences.get).mockResolvedValue({ drive_log_calendar_default: false, theme: 'light' })
     render(<ThemePreferenceForm />)

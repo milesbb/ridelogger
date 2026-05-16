@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
+import { axe } from 'vitest-axe'
 import { DriveResultsTable } from './drive-results-table'
 import type { DriveLegResult } from '@/lib/api/types'
 
@@ -34,6 +35,11 @@ const errorLeg: DriveLegResult = {
 }
 
 describe('DriveResultsTable — rendering', () => {
+  it('has no accessibility violations', async () => {
+    const { container } = render(<DriveResultsTable results={[passengerLeg]} />)
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
   it('renders each leg label', () => {
     render(<DriveResultsTable results={[passengerLeg, nonPassengerLeg]} />)
     expect(screen.getByText(/Alice: pick-up → drop-off/)).toBeInTheDocument()
